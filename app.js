@@ -131,7 +131,11 @@ addBox() {
   const geo = new THREE.BoxGeometry(size.w, size.h, size.d);
   const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.05, roughness: 0.8 });
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.userData.type = 'box'; mesh.userData.id = id;
+  mesh.userData.type = 'box';
+  mesh.userData.id = id;
+  mesh.userData.baseColor = color;
+  mesh.userData.baseEmissive = mat.emissive.getHex();
+  mesh.userData.baseEmissiveIntensity = mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 1;
   mesh.castShadow = true;
 
   const box = { id, size, position:{ x:0, y:0, z:0 }, mesh };
@@ -146,17 +150,44 @@ addBox() {
   this.updateHud();
 }
 
+  setBoxHighlight(box, active) {
+    if (!box || !box.mesh) return;
+
+    const mat = box.mesh.material;
+    const baseColorHex = box.mesh.userData.baseColor ?? mat.color.getHex();
+    const baseEmissiveHex = box.mesh.userData.baseEmissive ?? 0x000000;
+    const baseEmissiveIntensity = box.mesh.userData.baseEmissiveIntensity ?? 1;
+
+    if (active) {
+      const highlightColor = new THREE.Color(baseColorHex).lerp(new THREE.Color(0xffffff), 0.35);
+      mat.color.copy(highlightColor);
+      mat.emissive.setHex(0xffc857);
+      mat.emissiveIntensity = 0.6;
+    } else {
+      mat.color.setHex(baseColorHex);
+      mat.emissive.setHex(baseEmissiveHex);
+      mat.emissiveIntensity = baseEmissiveIntensity;
+    }
+    mat.needsUpdate = true;
+  }
+
   selectBox(idOrNull) {
+    if (this.selectedBox) this.setBoxHighlight(this.selectedBox, false);
     this.selectedBox = this.boxes.find(b=>b.id===idOrNull) || null;
+    if (this.selectedBox) this.setBoxHighlight(this.selectedBox, true);
     this.updateBoxList();
   }
 
   deleteBox(id) {
     const idx = this.boxes.findIndex(b=>b.id===id);
     if (idx>=0) {
-      this.scene.remove(this.boxes[idx].mesh);
+      const box = this.boxes[idx];
+      if (this.selectedBox && this.selectedBox.id===id) {
+        this.setBoxHighlight(box, false);
+        this.selectedBox = null;
+      }
+      this.scene.remove(box.mesh);
       this.boxes.splice(idx,1);
-      if (this.selectedBox && this.selectedBox.id===id) this.selectedBox=null;
       this.resolveStacks();
       this.updateBoxList();
       this.updateHud();
