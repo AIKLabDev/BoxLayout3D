@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Box Layout 3D</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="toolbar">
+        <button id="addBoxBtn">Add Box</button>
+        <div id="message" role="status" aria-live="assertive"></div>
+      </div>
+      <div class="content">
+        <div id="threeContainer" aria-label="3D 작업 공간"></div>
+        <div class="panel" id="infoPanel" aria-live="polite">
+          <h2>Box 정보</h2>
+          <div id="noSelection">박스를 선택하세요.</div>
+          <form id="boxForm" hidden>
+            <div class="field">
+              <label for="boxIndex">Index</label>
+              <input id="boxIndex" type="text" readonly />
+            </div>
+            <div class="field">
+              <label for="boxWidth">가로 (mm)</label>
+              <input id="boxWidth" type="number" min="10" step="1" />
+            </div>
+            <div class="field">
+              <label for="boxDepth">세로 (mm)</label>
+              <input id="boxDepth" type="number" min="10" step="1" />
+            </div>
+            <div class="field">
+              <label for="boxHeight">높이 (mm)</label>
+              <input id="boxHeight" type="number" min="10" step="1" />
+            </div>
+            <button type="button" id="deleteBoxBtn" class="danger">선택 박스 삭제</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
