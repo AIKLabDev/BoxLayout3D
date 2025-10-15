@@ -1,46 +1,129 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Box Layout 3D</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div id="app">
-      <div class="toolbar">
-        <button id="addBoxBtn">Add Box</button>
-        <div id="message" role="status" aria-live="assertive"></div>
-      </div>
-      <div class="content">
-        <div id="threeContainer" aria-label="3D 작업 공간"></div>
-        <div class="panel" id="infoPanel" aria-live="polite">
-          <h2>Box 정보</h2>
-          <div id="noSelection">박스를 선택하세요.</div>
-          <form id="boxForm" hidden>
-            <div class="field">
-              <label for="boxIndex">Index</label>
-              <input id="boxIndex" type="text" readonly />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Box Layout</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #controls {
+            width: 300px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        #addBoxBtn {
+            width: 100%;
+            padding: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        #addBoxBtn:hover {
+            background-color: #0056b3;
+        }
+        
+        .box-info {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        
+        .box-info h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .box-info input {
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        
+        .box-info button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .box-info button:hover {
+            background-color: #c82333;
+        }
+        
+        #error-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #dc3545;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+        }
+        
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container">
+            <div id="info-panel">
+                <h3>3D Box Layout</h3>
+                <p>공간 크기: 1000mm × 1000mm × 3000mm</p>
+                <p>박스 개수: <span id="boxCount">0</span></p>
             </div>
-            <div class="field">
-              <label for="boxWidth">가로 (mm)</label>
-              <input id="boxWidth" type="number" min="10" step="1" />
-            </div>
-            <div class="field">
-              <label for="boxDepth">세로 (mm)</label>
-              <input id="boxDepth" type="number" min="10" step="1" />
-            </div>
-            <div class="field">
-              <label for="boxHeight">높이 (mm)</label>
-              <input id="boxHeight" type="number" min="10" step="1" />
-            </div>
-            <button type="button" id="deleteBoxBtn" class="danger">선택 박스 삭제</button>
-          </form>
+            <canvas id="canvas"></canvas>
         </div>
-      </div>
+        
+        <div id="controls">
+            <button id="addBoxBtn">Add Box</button>
+            <div id="boxList"></div>
+        </div>
     </div>
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="./src/main.js"></script>
-  </body>
+    
+    <div id="error-message"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="app.js"></script>
+</body>
 </html>
