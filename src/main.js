@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+>>>>>>> main
 const AREA_SIZE = 1000; // x, z dimensions (mm)
 const AREA_HEIGHT = 3000; // y dimension (mm)
 const MIN_DIMENSION = 10;
@@ -26,7 +32,11 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(container.clientWidth, container.clientHeight);
 container.appendChild(renderer.domElement);
 
+<<<<<<< HEAD
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
+=======
+const controls = new OrbitControls(camera, renderer.domElement);
+>>>>>>> main
 controls.target.set(0, 200, 0);
 controls.enableDamping = true;
 controls.maxPolarAngle = Math.PI / 2.1;
@@ -53,7 +63,11 @@ scene.add(gridHelper);
 const boundaryGeometry = new THREE.BoxGeometry(AREA_SIZE, AREA_HEIGHT, AREA_SIZE);
 boundaryGeometry.translate(0, AREA_HEIGHT / 2, 0);
 const boundaryEdges = new THREE.EdgesGeometry(boundaryGeometry);
+<<<<<<< HEAD
 const boundary = new THREE.LineSegments(boundaryEdges, new THREE.LineBasicMaterial({ color: 0xaaaaaa }));
+=======
+const boundary = new THREE.LineSegments(boundaryEdges, new THREE.LineBasicMaterial({ color: 0x666666 }));
+>>>>>>> main
 scene.add(boundary);
 
 const raycaster = new THREE.Raycaster();
@@ -165,6 +179,7 @@ function validatePlacement(record, candidateBounds) {
   return true;
 }
 
+<<<<<<< HEAD
 function randomBoxColor() {
   const color = new THREE.Color();
   color.setHSL(Math.random(), 0.55, 0.55);
@@ -180,18 +195,35 @@ function createMaterial(colorHex, selected = false) {
     transparent: true,
     metalness: 0.1,
     roughness: 0.65
+=======
+function createMaterial(selected = false) {
+  return new THREE.MeshStandardMaterial({
+    color: selected ? 0xffa500 : 0x4299e1,
+    opacity: 0.9,
+    transparent: true,
+    metalness: 0.1,
+    roughness: 0.7
+>>>>>>> main
   });
 }
 
 function setSelected(record) {
   if (selectedBox && selectedBox !== record) {
     selectedBox.mesh.material.dispose();
+<<<<<<< HEAD
     selectedBox.mesh.material = createMaterial(selectedBox.color, false);
+=======
+    selectedBox.mesh.material = createMaterial(false);
+>>>>>>> main
   }
   selectedBox = record;
   if (record) {
     record.mesh.material.dispose();
+<<<<<<< HEAD
     record.mesh.material = createMaterial(record.color, true);
+=======
+    record.mesh.material = createMaterial(true);
+>>>>>>> main
     boxForm.hidden = false;
     noSelectionEl.style.display = 'none';
     boxIndexInput.value = record.id.toString();
@@ -206,8 +238,12 @@ function setSelected(record) {
 }
 
 function addBox(width = DEFAULT_DIMENSION, depth = DEFAULT_DIMENSION, height = DEFAULT_DIMENSION) {
+<<<<<<< HEAD
   const color = randomBoxColor();
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), createMaterial(color, false));
+=======
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), createMaterial(false));
+>>>>>>> main
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   const position = findAvailablePosition(width, depth, height);
@@ -224,7 +260,10 @@ function addBox(width = DEFAULT_DIMENSION, depth = DEFAULT_DIMENSION, height = D
     width,
     depth,
     height,
+<<<<<<< HEAD
     color,
+=======
+>>>>>>> main
     bounds: computeBounds(position, width, depth, height),
     lastValid: null
   };
