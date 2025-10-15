@@ -1,50 +1,104 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Box Layout 3D</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div id="app">
-      <div class="toolbar">
-        <button id="addBoxBtn">Add Box</button>
-        <div id="message" role="status" aria-live="assertive"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Box Layout</title>
+  <style>
+    :root {
+      --panel-w: 340px;
+      --gap: 16px;
+      --card-bg: #ffffff;
+      --card-border: #e5e7eb;
+      --blue: #0d6efd;
+      --blue-100:#eaf2ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; padding: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji';
+      background: #f5f6f8;
+      overflow: hidden; /* 페이지 스크롤 방지 */
+    }
+    #container {
+      display: grid;
+      grid-template-columns: 1fr var(--panel-w);
+      gap: var(--gap);
+      height: 100%;
+      width: 100%;
+    }
+    #scene-wrap {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+      background: #efefef;
+    }
+    canvas { display: block; }
+    #hud {
+      position: absolute;
+      left: var(--gap);
+      top: var(--gap);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 10px 20px rgba(0,0,0,.05);
+      pointer-events: none;
+      min-width: 280px;
+    }
+    #hud h2 { margin: 0 0 8px 0; font-size: 18px; }
+    #hud p { margin: 6px 0; color: #374151; font-size: 14px; }
+    #controls {
+      height: 100%;
+      padding: var(--gap);
+      background: #ffffff;
+      border-left: 1px solid var(--card-border);
+      overflow: auto;
+    }
+    #addBoxBtn {
+      width: 100%;
+      padding: 12px 14px;
+      border: none; border-radius: 10px;
+      background: var(--blue); color: #fff; font-weight: 700;
+      cursor: pointer; margin-bottom: var(--gap);
+    }
+    #boxList { display: flex; flex-direction: column; gap: 12px; }
+    .box-info {
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      background: var(--card-bg);
+      padding: 12px;
+    }
+    .box-info h3 { margin: 0 0 10px 0; font-size: 16px; }
+    .box-info p { margin: 6px 0; font-size: 14px; }
+    .box-info button { padding: 8px 10px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; }
+    .box-info.selected { border-color: var(--blue); background: var(--blue-100); }
+    .row { display:flex; gap:8px; margin-top:8px; }
+    label { display:block; font-size: 13px; color:#374151; margin: 8px 0 4px; }
+    input[type=number] { width: 100%; padding: 8px; border-radius: 8px; border:1px solid #d1d5db; }
+    #error-message { position: fixed; right: 12px; bottom: 12px; color:#b91c1c; font-weight: 700;}
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="scene-wrap">
+      <div id="hud">
+        <h2>3D Box Layout</h2>
+        <p id="spaceInfo">공간 크기: -</p>
+        <p id="boxCount">박스 개수: 0</p>
       </div>
-      <div class="content">
-        <div id="threeContainer" aria-label="3D 작업 공간"></div>
-        <div class="panel" id="infoPanel" aria-live="polite">
-          <h2>Box 정보</h2>
-          <div id="noSelection">박스를 선택하세요.</div>
-          <form id="boxForm" hidden>
-            <div class="field">
-              <label for="boxIndex">Index</label>
-              <input id="boxIndex" type="text" readonly />
-            </div>
-            <div class="field">
-              <label for="boxWidth">가로 (mm)</label>
-              <input id="boxWidth" type="number" min="10" step="1" />
-            </div>
-            <div class="field">
-              <label for="boxDepth">세로 (mm)</label>
-              <input id="boxDepth" type="number" min="10" step="1" />
-            </div>
-            <div class="field">
-              <label for="boxHeight">높이 (mm)</label>
-              <input id="boxHeight" type="number" min="10" step="1" />
-            </div>
-            <button type="button" id="deleteBoxBtn" class="danger">선택 박스 삭제</button>
-          </form>
-        </div>
-      </div>
+      <div id="three-root"></div>
     </div>
-<<<<<<< HEAD
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="./src/main.js"></script>
-=======
-    <script type="module" src="./src/main.js"></script>
->>>>>>> main
-  </body>
+    <div id="controls">
+      <button id="addBoxBtn">Add Box</button>
+      <div id="boxList"></div>
+    </div>
+  </div>
+
+  <div id="error-message"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="app.js"></script>
+</body>
 </html>
