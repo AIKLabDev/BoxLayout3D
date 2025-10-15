@@ -1,129 +1,104 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Box Layout</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-        }
-        
-        #container {
-            display: flex;
-            height: 100vh;
-        }
-        
-        #canvas-container {
-            flex: 1;
-            position: relative;
-        }
-        
-        #controls {
-            width: 300px;
-            background-color: #fff;
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            overflow-y: auto;
-        }
-        
-        #addBoxBtn {
-            width: 100%;
-            padding: 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-        
-        #addBoxBtn:hover {
-            background-color: #0056b3;
-        }
-        
-        .box-info {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 10px;
-            background-color: #f9f9f9;
-        }
-        
-        .box-info h3 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-        
-        .box-info input {
-            width: 100%;
-            padding: 5px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-        
-        .box-info button {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        
-        .box-info button:hover {
-            background-color: #c82333;
-        }
-        
-        #error-message {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: #dc3545;
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            display: none;
-            z-index: 1000;
-        }
-        
-        #info-panel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Box Layout</title>
+  <style>
+    :root {
+      --panel-w: 340px;
+      --gap: 16px;
+      --card-bg: #ffffff;
+      --card-border: #e5e7eb;
+      --blue: #0d6efd;
+      --blue-100:#eaf2ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; padding: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji';
+      background: #f5f6f8;
+      overflow: hidden; /* 페이지 스크롤 방지 */
+    }
+    #container {
+      display: grid;
+      grid-template-columns: 1fr var(--panel-w);
+      gap: var(--gap);
+      height: 100%;
+      width: 100%;
+    }
+    #scene-wrap {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+      background: #efefef;
+    }
+    canvas { display: block; }
+    #hud {
+      position: absolute;
+      left: var(--gap);
+      top: var(--gap);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 10px 20px rgba(0,0,0,.05);
+      pointer-events: none;
+      min-width: 280px;
+    }
+    #hud h2 { margin: 0 0 8px 0; font-size: 18px; }
+    #hud p { margin: 6px 0; color: #374151; font-size: 14px; }
+    #controls {
+      height: 100%;
+      padding: var(--gap);
+      background: #ffffff;
+      border-left: 1px solid var(--card-border);
+      overflow: auto;
+    }
+    #addBoxBtn {
+      width: 100%;
+      padding: 12px 14px;
+      border: none; border-radius: 10px;
+      background: var(--blue); color: #fff; font-weight: 700;
+      cursor: pointer; margin-bottom: var(--gap);
+    }
+    #boxList { display: flex; flex-direction: column; gap: 12px; }
+    .box-info {
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      background: var(--card-bg);
+      padding: 12px;
+    }
+    .box-info h3 { margin: 0 0 10px 0; font-size: 16px; }
+    .box-info p { margin: 6px 0; font-size: 14px; }
+    .box-info button { padding: 8px 10px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; }
+    .box-info.selected { border-color: var(--blue); background: var(--blue-100); }
+    .row { display:flex; gap:8px; margin-top:8px; }
+    label { display:block; font-size: 13px; color:#374151; margin: 8px 0 4px; }
+    input[type=number] { width: 100%; padding: 8px; border-radius: 8px; border:1px solid #d1d5db; }
+    #error-message { position: fixed; right: 12px; bottom: 12px; color:#b91c1c; font-weight: 700;}
+  </style>
 </head>
 <body>
-    <div id="container">
-        <div id="canvas-container">
-            <div id="info-panel">
-                <h3>3D Box Layout</h3>
-                <p>공간 크기: 1000mm × 1000mm × 3000mm</p>
-                <p>박스 개수: <span id="boxCount">0</span></p>
-            </div>
-            <canvas id="canvas"></canvas>
-        </div>
-        
-        <div id="controls">
-            <button id="addBoxBtn">Add Box</button>
-            <div id="boxList"></div>
-        </div>
+  <div id="container">
+    <div id="scene-wrap">
+      <div id="hud">
+        <h2>3D Box Layout</h2>
+        <p id="spaceInfo">공간 크기: -</p>
+        <p id="boxCount">박스 개수: 0</p>
+      </div>
+      <div id="three-root"></div>
     </div>
-    
-    <div id="error-message"></div>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="app.js"></script>
+    <div id="controls">
+      <button id="addBoxBtn">Add Box</button>
+      <div id="boxList"></div>
+    </div>
+  </div>
+
+  <div id="error-message"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
