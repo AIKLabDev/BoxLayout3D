@@ -1,16 +1,15 @@
 ﻿class App {
   constructor() {
-    // 공간(mm)
+    // Work space (mm)
     this.spaceSize = { width: 1000, height: 3000, depth: 1000 };
     this.colors = [0x2d728f, 0x94a187, 0xbf616a, 0xd08770, 0xa3be8c, 0x5e81ac];
     this.colorIdx = 0;
 
-    // 상태
     this.boxes = [];      // {id,size:{w,h,d}, position:{x,y,z}, mesh}
     this.selectedBox = null;
     this.drag = { active:false, offset:new THREE.Vector3(), plane:null, target:null };
 
-    // 씬 기본 구성
+    // Scene default construct
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xefefef);
 
@@ -24,7 +23,7 @@
     this.renderer.setSize(window.innerWidth - 340, window.innerHeight);
     document.getElementById('three-root').appendChild(this.renderer.domElement);
 
-    // 조명
+    // Light
     const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.9);
     hemi.position.set(0, 2000, 0);
     this.scene.add(hemi);
@@ -32,10 +31,9 @@
     dir.position.set(1500, 2000, 1500);
     this.scene.add(dir);
 
-    // 공간/바닥/라인
+    // draw space, floor, line 
     this.drawSpace();
 
-    // 컨트롤
     this.setupControls();
 
     // UI
@@ -50,14 +48,14 @@
   drawSpace() {
     const { width, height, depth } = this.spaceSize;
 
-    // 방 모서리 와이어
+    // Space edge wire frame
     const boxGeo = new THREE.BoxGeometry(width, height, depth);
     const edges = new THREE.EdgesGeometry(boxGeo);
     const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
     wire.position.set(0, height/2, 0);
     this.scene.add(wire);
 
-    // 바닥
+    // floor
     const floorGeo = new THREE.PlaneGeometry(width, depth);
     const floorMat = new THREE.MeshLambertMaterial({ color: 0xcccccc, transparent:true, opacity: 0.35 });
     const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -66,7 +64,7 @@
     floor.receiveShadow = true;
     this.scene.add(floor);
 
-    // 바닥 테두리
+    // floor edge
     const p = [
       new THREE.Vector3(-width/2, 0.1, -depth/2),
       new THREE.Vector3( width/2, 0.1, -depth/2),
@@ -86,9 +84,9 @@
     el.addEventListener('contextmenu', (e)=>e.preventDefault());
     el.addEventListener('mousedown', (e)=>{
       e.preventDefault();
-      if (e.button === 0) { // 좌클릭: 드래그(박스)
+      if (e.button === 0) { // 0 - left click : drag
         this.tryStartDrag(e);
-      } else if (e.button === 1 || e.button === 2) { // 중/우클릭: 회전
+      } else if (e.button === 1 || e.button === 2) { // 1 - middle, 2 - right : rotate
         rotating = true; lastX = e.clientX; lastY = e.clientY;
       }
     });
@@ -99,7 +97,7 @@
         const dy = e.clientY - lastY;
         lastX = e.clientX; lastY = e.clientY;
         spherical.theta -= dx * 0.01;
-        spherical.phi   -= dy * 0.01; // 위/아래 방향 정상화(반전)
+        spherical.phi   -= dy * 0.01; // rotate inverse
         spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
         this.camera.position.setFromSpherical(spherical);
         this.camera.lookAt(0,0,0);
@@ -121,11 +119,11 @@
     }, { passive:false });
   }
 
-  // ----- 박스 -----
+  // ----- box -----
 addBox() {
   const id = this.boxes.length ? Math.max(...this.boxes.map(b=>b.id))+1 : 0;
 
-  // 200 ~ 300 범위 랜덤 크기
+  // 200 ~ 300 mm random box size
   const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
   const size = { w: rand(200, 300), h: rand(200, 300), d: rand(200, 300) };
 
@@ -145,7 +143,7 @@ addBox() {
   this.scene.add(mesh);
   this.boxes.push(box);
 
-  // 바닥에 스냅
+  // snap box on floor
   box.position.y = this.findBestSnapPosition(box, false);
   mesh.position.set(box.position.x, box.position.y, box.position.z);
 
@@ -198,18 +196,18 @@ addBox() {
   }
 
   updateBoxSize(box) {
-    // 입력값 읽기
+    // read input box size 
     if (!box) return;
     const w = Math.max(1, parseFloat(document.getElementById(`w-${box.id}`).value));
     const h = Math.max(1, parseFloat(document.getElementById(`h-${box.id}`).value));
     const d = Math.max(1, parseFloat(document.getElementById(`d-${box.id}`).value));
     box.size = { w, h, d };
 
-    // 새 지오메트리
+    // spawn new box geometry
     box.mesh.geometry.dispose();
     box.mesh.geometry = new THREE.BoxGeometry(w, h, d);
 
-    // 높이가 변했으니 스냅 재계산
+    // calc snap for new height size
     box.position.y = this.findBestSnapPosition(box, false);
     box.mesh.position.y = box.position.y;
 
@@ -260,7 +258,7 @@ addBox() {
     document.getElementById('boxCount').textContent = `박스 개수: ${this.boxes.length}`;
   }
 
-  // ----- 드래그 -----
+  // ----- drag -----
   raycastFromMouse(event) {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -297,7 +295,7 @@ addBox() {
     const hit = new THREE.Vector3();
     raycaster.ray.intersectPlane(plane, hit);
 
-    // 경계 내로 클램프
+    // 경계 안으로 clamp
     const w2 = this.spaceSize.width/2;
     const d2 = this.spaceSize.depth/2;
     const x = THREE.MathUtils.clamp(hit.x - offset.x, -w2 + target.size.w/2, w2 - target.size.w/2);
@@ -308,7 +306,7 @@ addBox() {
     target.position.y = this.computeDraggedY(target, target.position.y);
     target.mesh.position.set(target.position.x, target.position.y, target.position.z);
 
-    // 다른 박스 낙하(중간중간도 자연스럽게)
+    // 다른 box 낙하
     this.resolveStacks(target);
     this.updateBoxList();
   }
@@ -317,9 +315,9 @@ addBox() {
     this.drag.active = false;
   }
 
-  // ----- 스냅/적층 -----
+  // ----- Snap/적층 -----
   findBestSnapPosition(box, considerBelowOnly = false) {
-    // 기본은 바닥
+    // 기본은 바닥에
     let bestY = box.size.h/2;
     // 다른 박스들의 윗면과 XZ 투영이 겹치면 그 위로
     for (const other of this.boxes) {
@@ -403,7 +401,7 @@ addBox() {
     }
   }
 
-  // ----- 기타 -----
+  // ----- ETC -----
   onResize() {
     const w = window.innerWidth - 340;
     const h = window.innerHeight;
