@@ -253,9 +253,11 @@ addBox() {
   }
 
   updateHud() {
+    const labelSpace = '공간 크기';
+    const labelCount = '박스 개수';
     document.getElementById('spaceInfo').textContent =
-      `공간 크기: ${this.spaceSize.width}mm × ${this.spaceSize.depth}mm × ${this.spaceSize.height}mm`;
-    document.getElementById('boxCount').textContent = `박스 개수: ${this.boxes.length}`;
+      `${labelSpace}: ${this.spaceSize.width}mm x ${this.spaceSize.depth}mm x ${this.spaceSize.height}mm`;
+    document.getElementById('boxCount').textContent = '${labelCount}: ${this.boxes.length}';
   }
 
   // ----- drag -----
