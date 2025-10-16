@@ -113,7 +113,10 @@ class App {
     el.addEventListener('wheel', (e)=>{
       e.preventDefault();
       const factor = e.deltaY > 0 ? 1.1 : 0.9;
-      this.camera.position.multiplyScalar(factor);
+      const minRadius = 100;
+      const maxRadius = 8000;
+      spherical.radius = THREE.MathUtils.clamp(spherical.radius * factor, minRadius, maxRadius);
+      this.camera.position.setFromSpherical(spherical);
       this.camera.lookAt(0,0,0);
     }, { passive:false });
   }
@@ -225,8 +228,8 @@ addBox() {
         div.innerHTML = `
           <h3>Box ${b.id}</h3>
           <label>가로 (mm)</label><input id="w-${b.id}" type="number" value="${b.size.w}" min="1">
-          <label>세로 (mm)</label><input id="h-${b.id}" type="number" value="${b.size.h}" min="1">
-          <label>높이 (mm)</label><input id="d-${b.id}" type="number" value="${b.size.d}" min="1">
+          <label>세로 (mm)</label><input id="d-${b.id}" type="number" value="${b.size.d}" min="1">
+          <label>높이 (mm)</label><input id="h-${b.id}" type="number" value="${b.size.h}" min="1">
           <div class="row">
             <button onclick="app.deleteBox(${b.id})">삭제</button>
             <button onclick="app.selectBox(null)">선택 해제</button>
@@ -235,7 +238,7 @@ addBox() {
       } else {
         div.innerHTML = `
           <h3>Box ${b.id}</h3>
-          <p>크기: ${b.size.w} × ${b.size.h} × ${b.size.d} mm</p>
+          <p>크기: ${b.size.w} × ${b.size.d} × ${b.size.h} mm</p>
           <p>위치: (${Math.round(b.position.x)}, ${Math.round(b.position.y)}, ${Math.round(b.position.z)})</p>
           <div class="row"><button onclick="app.selectBox(${b.id})">선택</button>
           <button onclick="app.deleteBox(${b.id})">삭제</button></div>
