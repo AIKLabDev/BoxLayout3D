@@ -88,6 +88,24 @@
       background: var(--blue); color: #fff; font-weight: 700;
       cursor: pointer; margin-bottom: var(--gap);
     }
+    .secondary-btn {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      color: #1f2937;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .secondary-btn:hover { background: #f3f4f6; }
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: var(--gap);
+    }
+    .button-row .secondary-btn { flex: 1; }
+    #loadInput { display: none; }
     #boxList { display: flex; flex-direction: column; gap: 12px; }
     .box-info {
       border: 1px solid var(--card-border);
@@ -120,6 +138,11 @@
     </div>
     <div id="controls">
       <button id="addBoxBtn">Add Box</button>
+      <div class="button-row">
+        <button id="saveLayoutBtn" class="secondary-btn">Save Layout</button>
+        <button id="loadLayoutBtn" class="secondary-btn">Load Layout</button>
+      </div>
+      <input type="file" id="loadInput" accept="application/json" />
       <div id="boxList"></div>
     </div>
   </div>
