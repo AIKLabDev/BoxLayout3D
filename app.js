@@ -11,16 +11,19 @@
 
     // Scene default construct
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xefefef);
+    this.scene.background = new THREE.Color(0xf2f5fb);
 
-    const aspect = (window.innerWidth - 340) / window.innerHeight;
+    const { width: sceneWidth, height: sceneHeight } = this.getSceneDimensions();
+    const aspect = sceneWidth / sceneHeight;
     this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 10000);
     this.camera.position.set(1200, 1000, 1200);
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ antialias:true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    this.renderer.setSize(window.innerWidth - 340, window.innerHeight);
+    this.renderer.setSize(sceneWidth, sceneHeight);
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
     document.getElementById('three-root').appendChild(this.renderer.domElement);
 
     // Light
@@ -43,6 +46,17 @@
     this.updateBoxList();
 
     this.animate();
+  }
+
+  getSceneDimensions() {
+    const wrap = document.getElementById('scene-wrap');
+    if (!wrap) {
+      return { width: window.innerWidth, height: window.innerHeight };
+    }
+    const rect = wrap.getBoundingClientRect();
+    const width = Math.max(1, rect.width);
+    const height = Math.max(1, rect.height);
+    return { width, height };
   }
 
   drawSpace() {
@@ -405,10 +419,9 @@ addBox() {
 
   // ----- ETC -----
   onResize() {
-    const w = window.innerWidth - 340;
-    const h = window.innerHeight;
-    this.renderer.setSize(w, h);
-    this.camera.aspect = w / h;
+    const { width, height } = this.getSceneDimensions();
+    this.renderer.setSize(width, height);
+    this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
   }
 
