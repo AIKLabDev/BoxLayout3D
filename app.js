@@ -8,6 +8,7 @@
     this.boxes = [];      // {id,size:{w,h,d}, position:{x,y,z}, mesh}
     this.selectedBox = null;
     this.drag = { active:false, offset:new THREE.Vector3(), plane:null, target:null };
+    this.messageTimer = null;
 
     // Scene default construct
     this.scene = new THREE.Scene();
@@ -80,7 +81,14 @@
     // UI
     this.topViewBtn = document.getElementById('topViewBtn');
     this.topViewBtn.addEventListener('click', () => this.toggleView());
-    document.getElementById('addBoxBtn').addEventListener('click', () => this.addBox());
+    const addBoxBtn = document.getElementById('addBoxBtn');
+    if (addBoxBtn) addBoxBtn.addEventListener('click', () => this.addBox());
+    this.saveBtn = document.getElementById('saveLayoutBtn');
+    if (this.saveBtn) this.saveBtn.addEventListener('click', () => this.saveLayout());
+    this.loadBtn = document.getElementById('loadLayoutBtn');
+    if (this.loadBtn) this.loadBtn.addEventListener('click', () => this.promptLoadLayout());
+    this.loadInput = document.getElementById('loadInput');
+    if (this.loadInput) this.loadInput.addEventListener('change', (e) => this.handleLoadFile(e));
     window.addEventListener('resize', () => this.onResize());
     this.updateHud();
     this.updateBoxList();
@@ -401,7 +409,11 @@
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
-    this.drawLabelCanvas(ctx, size, text);
+    const defaultStyle = {
+      textColor: '#ffffff',
+      backgroundColor: 'rgba(33,37,41,0.8)'
+    };
+    this.drawLabelCanvas(ctx, size, text, defaultStyle);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.minFilter = THREE.LinearFilter;
@@ -422,17 +434,20 @@
     sprite.userData.ctx = ctx;
     sprite.userData.text = String(text);
     sprite.userData.texture = texture;
+    sprite.userData.style = { ...defaultStyle };
     return sprite;
   }
 
-  drawLabelCanvas(ctx, size, text) {
+  drawLabelCanvas(ctx, size, text, style = {}) {
+    const backgroundColor = style.backgroundColor ?? 'rgba(33,37,41,0.8)';
+    const textColor = style.textColor ?? '#ffffff';
     ctx.clearRect(0, 0, size, size);
-    ctx.fillStyle = 'rgba(33,37,41,0.8)';
+    ctx.fillStyle = backgroundColor;
     ctx.beginPath();
     ctx.arc(size/2, size/2, size/2 - 4, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = textColor;
     ctx.font = 'bold 64px "Segoe UI", Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -443,9 +458,52 @@
     if (!box.label) return;
     const desired = String(box.id);
     if (box.label.userData.text === desired) return;
-    this.drawLabelCanvas(box.label.userData.ctx, box.label.userData.canvas.width, desired);
-    box.label.material.map.needsUpdate = true;
     box.label.userData.text = desired;
+    this.drawLabelCanvas(
+      box.label.userData.ctx,
+      box.label.userData.canvas.width,
+      desired,
+      box.label.userData.style
+    );
+    if (box.label.material && box.label.material.map) {
+      box.label.material.map.needsUpdate = true;
+    }
+  }
+
+  applyLabelStyle(label, overrides = {}) {
+    if (!label || !label.userData) return;
+    const style = { ...(label.userData.style ?? {}), ...overrides };
+    label.userData.style = style;
+    this.drawLabelCanvas(
+      label.userData.ctx,
+      label.userData.canvas.width,
+      label.userData.text,
+      style
+    );
+    if (label.material && label.material.map) {
+      label.material.map.needsUpdate = true;
+    }
+  }
+
+  setLabelHighlight(box, active) {
+    if (!box || !box.label) return;
+    const targetStyle = active
+      ? {
+          textColor: '#ffde59',
+          backgroundColor: 'rgba(17,24,39,0.9)'
+        }
+      : {
+          textColor: '#ffffff',
+          backgroundColor: 'rgba(33,37,41,0.8)'
+        };
+    const currentStyle = box.label.userData.style ?? {};
+    if (
+      currentStyle.textColor === targetStyle.textColor &&
+      currentStyle.backgroundColor === targetStyle.backgroundColor
+    ) {
+      return;
+    }
+    this.applyLabelStyle(box.label, targetStyle);
   }
 
   updateBoxLabelPosition(box) {
@@ -466,32 +524,56 @@
     // 200 ~ 300 범위 랜덤 크기
     const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
     const size = { w: rand(200, 300), h: rand(200, 300), d: rand(200, 300) };
-
     const color = this.colors[this.colorIdx++ % this.colors.length];
+    const initialPosition = { x: 0, y: size.h / 2, z: 0 };
 
-    const geo = new THREE.BoxGeometry(size.w, size.h, size.d);
-    const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.05, roughness: 0.8 });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.userData.type = 'box';
-    mesh.userData.id = id;
-    mesh.userData.baseColor = color;
-    mesh.userData.baseEmissive = mat.emissive.getHex();
-    mesh.userData.baseEmissiveIntensity = mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 1;
-    mesh.castShadow = true;
-
-    const box = { id, size, position:{ x:0, y:0, z:0 }, mesh };
-    this.scene.add(mesh);
-    box.label = this.createBoxLabelSprite(id);
-    this.scene.add(box.label);
-    this.boxes.push(box);
+    const box = this.createBoxFromData({ id, size, position: initialPosition, color });
 
     // 바닥에 스냅
     box.position.y = this.findBestSnapPosition(box, false);
-    mesh.position.set(box.position.x, box.position.y, box.position.z);
+    box.mesh.position.set(box.position.x, box.position.y, box.position.z);
     this.updateBoxLabel(box);
 
     this.selectBox(id);
     this.updateHud();
+  }
+
+  createBoxFromData({ id, size, position, color }) {
+    const sanitizedSize = {
+      w: Math.max(1, size?.w ?? 1),
+      h: Math.max(1, size?.h ?? 1),
+      d: Math.max(1, size?.d ?? 1)
+    };
+    const defaultY = sanitizedSize.h / 2;
+    const sanitizedPosition = {
+      x: position?.x ?? 0,
+      y: position?.y ?? defaultY,
+      z: position?.z ?? 0
+    };
+    const geo = new THREE.BoxGeometry(sanitizedSize.w, sanitizedSize.h, sanitizedSize.d);
+    const baseColor = typeof color === 'number' ? color : this.colors[this.colorIdx++ % this.colors.length];
+    const mat = new THREE.MeshStandardMaterial({ color: baseColor, metalness: 0.05, roughness: 0.8 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.userData.type = 'box';
+    mesh.userData.id = id;
+    mesh.userData.baseColor = baseColor;
+    mesh.userData.baseEmissive = mat.emissive.getHex();
+    mesh.userData.baseEmissiveIntensity = mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 1;
+    mesh.castShadow = true;
+
+    const box = {
+      id,
+      size: { ...sanitizedSize },
+      position: { ...sanitizedPosition },
+      mesh
+    };
+    this.scene.add(mesh);
+    mesh.position.set(box.position.x, box.position.y, box.position.z);
+    box.label = this.createBoxLabelSprite(id);
+    this.scene.add(box.label);
+    this.updateBoxLabel(box);
+    this.boxes.push(box);
+    return box;
   }
 
   setBoxHighlight(box, active) {
@@ -502,17 +584,14 @@
     const baseEmissiveHex = box.mesh.userData.baseEmissive ?? 0x000000;
     const baseEmissiveIntensity = box.mesh.userData.baseEmissiveIntensity ?? 1;
 
-    if (active) {
-      const highlightColor = new THREE.Color(baseColorHex).lerp(new THREE.Color(0xffffff), 0.35);
-      mat.color.copy(highlightColor);
-      mat.emissive.setHex(0xffc857);
-      mat.emissiveIntensity = 0.6;
-    } else {
-      mat.color.setHex(baseColorHex);
-      mat.emissive.setHex(baseEmissiveHex);
+    mat.color.setHex(baseColorHex);
+    mat.emissive.setHex(baseEmissiveHex);
+    if (mat.emissiveIntensity !== undefined) {
       mat.emissiveIntensity = baseEmissiveIntensity;
     }
     mat.needsUpdate = true;
+
+    this.setLabelHighlight(box, active);
   }
 
   selectBox(idOrNull) {
@@ -611,6 +690,145 @@
     document.getElementById('boxCount').textContent = '${labelCount}: ${this.boxes.length}';
   }
 
+  // ----- 레이아웃 저장/불러오기 -----
+  exportLayoutData() {
+    return {
+      version: 1,
+      spaceSize: { ...this.spaceSize },
+      boxes: this.boxes.map(box => ({
+        id: box.id,
+        size: { ...box.size },
+        position: { ...box.position },
+        color: box.mesh.userData.baseColor ?? box.mesh.material.color.getHex()
+      }))
+    };
+  }
+
+  saveLayout() {
+    try {
+      const data = this.exportLayoutData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `box-layout-${timestamp}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      this.showMessage('레이아웃을 저장했습니다.', 'info');
+    } catch (err) {
+      console.error(err);
+      this.showMessage('레이아웃 저장에 실패했습니다.', 'error');
+    }
+  }
+
+  promptLoadLayout() {
+    if (!this.loadInput) return;
+    this.loadInput.value = '';
+    this.loadInput.click();
+  }
+
+  handleLoadFile(event) {
+    const input = event.target;
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        this.applyLayoutData(data);
+        this.showMessage('레이아웃을 불러왔습니다.', 'info');
+      } catch (err) {
+        console.error(err);
+        this.showMessage('레이아웃 파일이 올바르지 않습니다.', 'error');
+      } finally {
+        input.value = '';
+      }
+    };
+    reader.onerror = () => {
+      this.showMessage('레이아웃 파일을 읽을 수 없습니다.', 'error');
+      input.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  applyLayoutData(data) {
+    if (!data || !Array.isArray(data.boxes)) {
+      throw new Error('Invalid layout data');
+    }
+
+    this.clearBoxes();
+    const boxEntries = data.boxes;
+    boxEntries.forEach((entry, index) => {
+      const rawId = Number(entry?.id);
+      const id = Number.isFinite(rawId) ? rawId : index;
+      const size = {
+        w: Number(entry?.size?.w) || 200,
+        h: Number(entry?.size?.h) || 200,
+        d: Number(entry?.size?.d) || 200
+      };
+      const position = {
+        x: Number(entry?.position?.x) || 0,
+        y: Number(entry?.position?.y) || size.h / 2,
+        z: Number(entry?.position?.z) || 0
+      };
+      const color = typeof entry?.color === 'number' ? entry.color : undefined;
+      const box = this.createBoxFromData({ id, size, position, color });
+      box.mesh.position.set(box.position.x, box.position.y, box.position.z);
+      this.updateBoxLabel(box);
+    });
+    this.colorIdx = boxEntries.length;
+    this.resolveStacks();
+    this.selectBox(null);
+    this.updateBoxList();
+    this.updateHud();
+  }
+
+  clearBoxes() {
+    for (const box of this.boxes) {
+      if (box.mesh) {
+        this.scene.remove(box.mesh);
+        if (box.mesh.geometry) {
+          box.mesh.geometry.dispose();
+        }
+        const material = box.mesh.material;
+        if (Array.isArray(material)) {
+          material.forEach(mat => mat && mat.dispose && mat.dispose());
+        } else if (material && material.dispose) {
+          material.dispose();
+        }
+      }
+      if (box.label) {
+        this.scene.remove(box.label);
+        if (box.label.material) {
+          if (box.label.material.map && box.label.material.map.dispose) {
+            box.label.material.map.dispose();
+          }
+          if (box.label.material.dispose) {
+            box.label.material.dispose();
+          }
+        }
+      }
+    }
+    this.boxes = [];
+    this.selectedBox = null;
+  }
+
+  showMessage(message, type = 'info', duration = 4000) {
+    const el = document.getElementById('error-message');
+    if (!el) return;
+    el.textContent = message;
+    el.style.color = type === 'error' ? '#b91c1c' : '#065f46';
+    if (this.messageTimer) clearTimeout(this.messageTimer);
+    this.messageTimer = setTimeout(() => {
+      if (el.textContent === message) {
+        el.textContent = '';
+      }
+    }, duration);
+  }
+  
   // ----- drag -----
   raycastFromMouse(event) {
     const rect = this.renderer.domElement.getBoundingClientRect();
