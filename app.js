@@ -1,4 +1,4 @@
-class App {
+﻿class App {
   constructor() {
     // 공간(mm)
     this.spaceSize = { width: 1000, height: 3000, depth: 1000 };
