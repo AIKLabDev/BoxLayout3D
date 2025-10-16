@@ -15,9 +15,36 @@ class App {
     this.scene.background = new THREE.Color(0xefefef);
 
     const aspect = (window.innerWidth - 340) / window.innerHeight;
-    this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 10000);
+    this.frustumSize = 2000;
+    const frustumHeight = this.frustumSize;
+    const frustumWidth = frustumHeight * aspect;
+    this.camera = new THREE.OrthographicCamera(
+      -frustumWidth / 2,
+      frustumWidth / 2,
+      frustumHeight / 2,
+      -frustumHeight / 2,
+      0.1,
+      10000
+    );
+    this.defaultUp = new THREE.Vector3(0, 1, 0);
+    this.topViewUp = new THREE.Vector3(0, 0, -1);
+    this.cameraTarget = new THREE.Vector3(0, 0, 0);
     this.camera.position.set(1200, 1000, 1200);
-    this.camera.lookAt(0, 0, 0);
+    this.camera.up.copy(this.defaultUp);
+    this.camera.lookAt(this.cameraTarget);
+    this.cameraZoomBounds = { min: 0.35, max: 4 };
+    this.cameraState = {
+      spherical: new THREE.Spherical().setFromVector3(this.camera.position.clone()),
+      minPhi: 0.01,
+      maxPhi: Math.PI - 0.12,
+      minRadius: 600,
+      maxRadius: 5000,
+      topViewActive: false
+    };
+    this.cameraAnimation = null;
+    this.pointer = new THREE.Vector2();
+    this.orbitZoomSnapshot = this.camera.zoom;
+    this.updateCameraFromState();
 
     this.renderer = new THREE.WebGLRenderer({ antialias:true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -39,6 +66,7 @@ class App {
     this.setupControls();
 
     // UI
+    document.getElementById('topViewBtn').addEventListener('click', () => this.goToTopView());
     document.getElementById('addBoxBtn').addEventListener('click', () => this.addBox());
     window.addEventListener('resize', () => this.onResize());
     this.updateHud();
@@ -80,78 +108,306 @@ class App {
 
   setupControls() {
     const el = this.renderer.domElement;
-    const spherical = new THREE.Spherical().setFromVector3(this.camera.position.clone());
-    let rotating = false, lastX = 0, lastY = 0;
+    let rotating = false;
+    const pointer = this.pointer;
 
     el.addEventListener('contextmenu', (e)=>e.preventDefault());
     el.addEventListener('mousedown', (e)=>{
       e.preventDefault();
-      if (e.button === 0) { // 좌클릭: 드래그(박스)
+      if (e.button === 0) {
         this.tryStartDrag(e);
-      } else if (e.button === 1 || e.button === 2) { // 중/우클릭: 회전
-        rotating = true; lastX = e.clientX; lastY = e.clientY;
+      } else if (e.button === 1 || e.button === 2) {
+        rotating = true;
+        pointer.set(e.clientX, e.clientY);
+        this.cancelCameraAnimation();
       }
     });
     el.addEventListener('mousemove', (e)=>{
       e.preventDefault();
       if (rotating) {
-        const dx = e.clientX - lastX;
-        const dy = e.clientY - lastY;
-        lastX = e.clientX; lastY = e.clientY;
-        spherical.theta -= dx * 0.01;
-        spherical.phi   -= dy * 0.01; // 위/아래 방향 정상화(반전)
-        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
-        this.camera.position.setFromSpherical(spherical);
-        this.camera.lookAt(0,0,0);
+        const dx = e.clientX - pointer.x;
+        const dy = e.clientY - pointer.y;
+        pointer.set(e.clientX, e.clientY);
+        this.adjustCameraOrbit(dx, dy);
       }
       if (this.drag.active) this.dragMove(e);
     });
-    window.addEventListener('mouseup', (e)=>{
+    window.addEventListener('mouseup', ()=>{
       if (rotating) rotating = false;
       if (this.drag.active) this.endDrag();
     });
     el.addEventListener('wheel', (e)=>{
       e.preventDefault();
-      const factor = e.deltaY > 0 ? 1.1 : 0.9;
-      const minRadius = 100;
-      const maxRadius = 8000;
-      spherical.radius = THREE.MathUtils.clamp(spherical.radius * factor, minRadius, maxRadius);
-      this.camera.position.setFromSpherical(spherical);
-      this.camera.lookAt(0,0,0);
+      this.handleWheel(e.deltaY);
     }, { passive:false });
   }
 
+  adjustCameraOrbit(dx, dy) {
+    if (dx === 0 && dy === 0) return;
+    this.exitTopView({ snapPhi: true });
+    const spherical = this.cameraState.spherical;
+    spherical.theta -= dx * 0.01;
+    spherical.phi -= dy * 0.01;
+    this.clampSpherical();
+    this.updateCameraFromState();
+  }
+
+  handleWheel(deltaY) {
+    this.cancelCameraAnimation();
+    const zoomFactor = deltaY > 0 ? 0.9 : 1.1;
+    this.camera.zoom = THREE.MathUtils.clamp(
+      this.camera.zoom * zoomFactor,
+      this.cameraZoomBounds.min,
+      this.cameraZoomBounds.max
+    );
+    this.camera.updateProjectionMatrix();
+
+    const radiusFactor = deltaY > 0 ? 1.05 : 0.95;
+    this.cameraState.spherical.radius *= radiusFactor;
+    this.clampSpherical();
+    if (!this.cameraState.topViewActive) {
+      this.orbitZoomSnapshot = this.camera.zoom;
+    }
+    this.updateCameraFromState();
+  }
+
+  cancelCameraAnimation() {
+    this.cameraAnimation = null;
+  }
+
+  startCameraAnimation(targetSpherical, options = {}) {
+    const target = targetSpherical.clone();
+    const minPhi = this.cameraState.topViewActive ? 0 : this.cameraState.minPhi;
+    target.phi = THREE.MathUtils.clamp(target.phi, minPhi, this.cameraState.maxPhi);
+    target.radius = THREE.MathUtils.clamp(target.radius, this.cameraState.minRadius, this.cameraState.maxRadius);
+
+    const duration = options.duration ?? 500;
+    const easing = options.easing ?? this.easeInOutQuad;
+    const zoomToRaw = options.zoom !== undefined ? options.zoom : this.camera.zoom;
+    const zoomTo = THREE.MathUtils.clamp(zoomToRaw, this.cameraZoomBounds.min, this.cameraZoomBounds.max);
+
+    this.cameraAnimation = {
+      from: this.cameraState.spherical.clone(),
+      to: target,
+      start: performance.now(),
+      duration,
+      easing,
+      zoomFrom: this.camera.zoom,
+      zoomTo,
+      onComplete: options.onComplete || null
+    };
+  }
+
+  tickCameraAnimation() {
+    if (!this.cameraAnimation) return;
+
+    const { start, duration, from, to, easing, zoomFrom, zoomTo, onComplete } = this.cameraAnimation;
+    const elapsed = (performance.now() - start) / duration;
+    const clamped = Math.min(Math.max(elapsed, 0), 1);
+    const t = easing ? easing(clamped) : clamped;
+
+    this.cameraState.spherical.radius = THREE.MathUtils.lerp(from.radius, to.radius, t);
+    this.cameraState.spherical.phi = THREE.MathUtils.lerp(from.phi, to.phi, t);
+    this.cameraState.spherical.theta = this.lerpAngle(from.theta, to.theta, t);
+    this.clampSpherical();
+
+    const zoom = THREE.MathUtils.lerp(zoomFrom, zoomTo, t);
+    this.camera.zoom = zoom;
+    this.camera.updateProjectionMatrix();
+    this.updateCameraFromState();
+
+    if (clamped >= 1) {
+      this.cameraState.spherical.copy(to);
+      this.camera.zoom = zoomTo;
+      this.camera.updateProjectionMatrix();
+      this.updateCameraFromState();
+      this.cameraAnimation = null;
+      if (onComplete) onComplete();
+    }
+  }
+
+  goToTopView() {
+    this.cancelCameraAnimation();
+    const target = this.cameraState.spherical.clone();
+    target.theta = 0;
+    target.phi = 0;
+    target.radius = Math.max(target.radius, 2200);
+
+    this.orbitZoomSnapshot = this.camera.zoom;
+    this.cameraState.topViewActive = true;
+    this.camera.up.copy(this.topViewUp);
+
+    const zoom = this.computeTopViewZoom();
+    this.startCameraAnimation(target, {
+      duration: 520,
+      easing: this.easeInOutQuad,
+      zoom,
+      onComplete: () => {
+        this.cameraState.spherical.phi = 0;
+        this.updateCameraFromState();
+      }
+    });
+  }
+
+  exitTopView({ applyUpdate = false, restoreZoom = false, snapPhi = false } = {}) {
+    if (!this.cameraState.topViewActive) return false;
+    this.cameraState.topViewActive = false;
+    this.camera.up.copy(this.defaultUp);
+    if (restoreZoom) {
+      const restored = THREE.MathUtils.clamp(
+        this.orbitZoomSnapshot,
+        this.cameraZoomBounds.min,
+        this.cameraZoomBounds.max
+      );
+      this.camera.zoom = restored;
+    } else {
+      this.orbitZoomSnapshot = this.camera.zoom;
+    }
+    this.camera.updateProjectionMatrix();
+    if (snapPhi) {
+      this.cameraState.spherical.phi = Math.max(this.cameraState.spherical.phi, this.cameraState.minPhi);
+    }
+    if (applyUpdate) this.updateCameraFromState();
+    return true;
+  }
+
+  clampSpherical() {
+    const s = this.cameraState.spherical;
+    const twoPi = Math.PI * 2;
+    s.theta = ((s.theta % twoPi) + twoPi) % twoPi;
+    const minPhi = this.cameraState.topViewActive ? 0 : this.cameraState.minPhi;
+    s.phi = THREE.MathUtils.clamp(s.phi, minPhi, this.cameraState.maxPhi);
+    s.radius = THREE.MathUtils.clamp(s.radius, this.cameraState.minRadius, this.cameraState.maxRadius);
+  }
+
+  lerpAngle(a, b, t) {
+    const twoPi = Math.PI * 2;
+    let diff = (b - a) % twoPi;
+    if (diff < -Math.PI) diff += twoPi;
+    if (diff > Math.PI) diff -= twoPi;
+    return a + diff * t;
+  }
+
+  updateCameraFromState() {
+    this.clampSpherical();
+    this.camera.position.setFromSpherical(this.cameraState.spherical);
+    this.camera.up.copy(this.cameraState.topViewActive ? this.topViewUp : this.defaultUp);
+    this.camera.lookAt(this.cameraTarget);
+  }
+
+  computeTopViewZoom() {
+    const aspect = (window.innerWidth - 340) / window.innerHeight;
+    const requiredVertical = this.spaceSize.depth * 1.1;
+    const requiredHorizontal = this.spaceSize.width * 1.1;
+    const zoomV = this.frustumSize / requiredVertical;
+    const zoomH = (this.frustumSize * aspect) / requiredHorizontal;
+    const targetZoom = Math.min(zoomV, zoomH);
+    return THREE.MathUtils.clamp(targetZoom, this.cameraZoomBounds.min, this.cameraZoomBounds.max);
+  }
+
+  easeInOutQuad(t) {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }
+
+  // ----- 라벨 -----
+  createBoxLabelSprite(text) {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    this.drawLabelCanvas(ctx, size, text);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+
+    const material = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false
+    });
+    const sprite = new THREE.Sprite(material);
+    const labelScale = 160;
+    sprite.scale.set(labelScale, labelScale, 1);
+    sprite.renderOrder = 10;
+    sprite.userData.canvas = canvas;
+    sprite.userData.ctx = ctx;
+    sprite.userData.text = String(text);
+    sprite.userData.texture = texture;
+    return sprite;
+  }
+
+  drawLabelCanvas(ctx, size, text) {
+    ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = 'rgba(33,37,41,0.8)';
+    ctx.beginPath();
+    ctx.arc(size/2, size/2, size/2 - 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 64px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(text), size/2, size/2);
+  }
+
+  updateBoxLabelTexture(box) {
+    if (!box.label) return;
+    const desired = String(box.id);
+    if (box.label.userData.text === desired) return;
+    this.drawLabelCanvas(box.label.userData.ctx, box.label.userData.canvas.width, desired);
+    box.label.material.map.needsUpdate = true;
+    box.label.userData.text = desired;
+  }
+
+  updateBoxLabelPosition(box) {
+    if (!box.label) return;
+    const y = box.position.y + box.size.h/2 + 20;
+    box.label.position.set(box.position.x, y, box.position.z);
+  }
+
+  updateBoxLabel(box) {
+    this.updateBoxLabelTexture(box);
+    this.updateBoxLabelPosition(box);
+  }
+
   // ----- 박스 -----
-addBox() {
-  const id = this.boxes.length ? Math.max(...this.boxes.map(b=>b.id))+1 : 0;
+  addBox() {
+    const id = this.boxes.length ? Math.max(...this.boxes.map(b=>b.id))+1 : 0;
 
-  // 200 ~ 300 범위 랜덤 크기
-  const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-  const size = { w: rand(200, 300), h: rand(200, 300), d: rand(200, 300) };
+    // 200 ~ 300 범위 랜덤 크기
+    const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const size = { w: rand(200, 300), h: rand(200, 300), d: rand(200, 300) };
 
-  const color = this.colors[this.colorIdx++ % this.colors.length];
+    const color = this.colors[this.colorIdx++ % this.colors.length];
 
-  const geo = new THREE.BoxGeometry(size.w, size.h, size.d);
-  const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.05, roughness: 0.8 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.userData.type = 'box';
-  mesh.userData.id = id;
-  mesh.userData.baseColor = color;
-  mesh.userData.baseEmissive = mat.emissive.getHex();
-  mesh.userData.baseEmissiveIntensity = mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 1;
-  mesh.castShadow = true;
+    const geo = new THREE.BoxGeometry(size.w, size.h, size.d);
+    const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.05, roughness: 0.8 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.userData.type = 'box';
+    mesh.userData.id = id;
+    mesh.userData.baseColor = color;
+    mesh.userData.baseEmissive = mat.emissive.getHex();
+    mesh.userData.baseEmissiveIntensity = mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 1;
+    mesh.castShadow = true;
 
-  const box = { id, size, position:{ x:0, y:0, z:0 }, mesh };
-  this.scene.add(mesh);
-  this.boxes.push(box);
+    const box = { id, size, position:{ x:0, y:0, z:0 }, mesh };
+    this.scene.add(mesh);
+    box.label = this.createBoxLabelSprite(id);
+    this.scene.add(box.label);
+    this.boxes.push(box);
 
-  // 바닥에 스냅
-  box.position.y = this.findBestSnapPosition(box, false);
-  mesh.position.set(box.position.x, box.position.y, box.position.z);
+    // 바닥에 스냅
+    box.position.y = this.findBestSnapPosition(box, false);
+    mesh.position.set(box.position.x, box.position.y, box.position.z);
+    this.updateBoxLabel(box);
 
-  this.selectBox(id);
-  this.updateHud();
-}
+    this.selectBox(id);
+    this.updateHud();
+  }
 
   setBoxHighlight(box, active) {
     if (!box || !box.mesh) return;
@@ -190,6 +446,13 @@ addBox() {
         this.selectedBox = null;
       }
       this.scene.remove(box.mesh);
+      if (box.label) {
+        this.scene.remove(box.label);
+        if (box.label.material && box.label.material.map) {
+          box.label.material.map.dispose();
+        }
+        if (box.label.material) box.label.material.dispose();
+      }
       this.boxes.splice(idx,1);
       this.resolveStacks();
       this.updateBoxList();
@@ -214,6 +477,7 @@ addBox() {
     box.mesh.position.y = box.position.y;
 
     this.resolveStacks(box);
+    this.updateBoxLabel(box);
     this.updateBoxList();
   }
 
@@ -307,6 +571,7 @@ addBox() {
     target.position.z = z;
     target.position.y = this.computeDraggedY(target, target.position.y);
     target.mesh.position.set(target.position.x, target.position.y, target.position.z);
+    this.updateBoxLabelPosition(target);
 
     // 다른 박스 낙하(중간중간도 자연스럽게)
     this.resolveStacks(target);
@@ -399,6 +664,7 @@ addBox() {
           b.mesh.position.y = y;
           changed = true;
         }
+        this.updateBoxLabelPosition(b);
       }
     }
   }
@@ -408,12 +674,22 @@ addBox() {
     const w = window.innerWidth - 340;
     const h = window.innerHeight;
     this.renderer.setSize(w, h);
-    this.camera.aspect = w / h;
+    const aspect = h > 0 ? (w / h) : 1;
+    const frustumHeight = this.frustumSize;
+    this.camera.left = -frustumHeight * aspect / 2;
+    this.camera.right = frustumHeight * aspect / 2;
+    this.camera.top = frustumHeight / 2;
+    this.camera.bottom = -frustumHeight / 2;
     this.camera.updateProjectionMatrix();
+    if (this.cameraState.topViewActive) {
+      this.camera.zoom = this.computeTopViewZoom();
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   animate() {
     requestAnimationFrame(()=>this.animate());
+    this.tickCameraAnimation();
     this.renderer.render(this.scene, this.camera);
   }
 }

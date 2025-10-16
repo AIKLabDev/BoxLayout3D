@@ -49,6 +49,31 @@
     }
     #hud h2 { margin: 0 0 8px 0; font-size: 18px; }
     #hud p { margin: 6px 0; color: #374151; font-size: 14px; }
+    #view-buttons {
+      position: absolute;
+      bottom: var(--gap);
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .view-btn {
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(33,37,41,0.85);
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .view-btn:hover {
+      background: rgba(33,37,41,1);
+      transform: translateY(-1px);
+    }
     #controls {
       height: 100%;
       padding: var(--gap);
@@ -89,6 +114,9 @@
         <p id="boxCount">박스 개수: 0</p>
       </div>
       <div id="three-root"></div>
+      <div id="view-buttons">
+        <button id="topViewBtn" class="view-btn">Top View</button>
+      </div>
     </div>
     <div id="controls">
       <button id="addBoxBtn">Add Box</button>
