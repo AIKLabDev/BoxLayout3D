@@ -41,6 +41,12 @@ class App {
       maxRadius: 5000,
       topViewActive: false
     };
+    this.previousCameraState = null;
+    this.initialOrbitSpherical = new THREE.Spherical(
+      this.cameraState.spherical.radius,
+      this.cameraState.spherical.phi,
+      this.cameraState.spherical.theta
+    );
     this.cameraAnimation = null;
     this.pointer = new THREE.Vector2();
     this.orbitZoomSnapshot = this.camera.zoom;
@@ -66,7 +72,8 @@ class App {
     this.setupControls();
 
     // UI
-    document.getElementById('topViewBtn').addEventListener('click', () => this.goToTopView());
+    this.topViewBtn = document.getElementById('topViewBtn');
+    this.topViewBtn.addEventListener('click', () => this.toggleView());
     document.getElementById('addBoxBtn').addEventListener('click', () => this.addBox());
     window.addEventListener('resize', () => this.onResize());
     this.updateHud();
@@ -116,7 +123,7 @@ class App {
       e.preventDefault();
       if (e.button === 0) {
         this.tryStartDrag(e);
-      } else if (e.button === 1 || e.button === 2) {
+      } else if ((e.button === 1 || e.button === 2) && !this.cameraState.topViewActive) {
         rotating = true;
         pointer.set(e.clientX, e.clientY);
         this.cancelCameraAnimation();
@@ -125,10 +132,14 @@ class App {
     el.addEventListener('mousemove', (e)=>{
       e.preventDefault();
       if (rotating) {
-        const dx = e.clientX - pointer.x;
-        const dy = e.clientY - pointer.y;
-        pointer.set(e.clientX, e.clientY);
-        this.adjustCameraOrbit(dx, dy);
+        if (this.cameraState.topViewActive) {
+          rotating = false;
+        } else {
+          const dx = e.clientX - pointer.x;
+          const dy = e.clientY - pointer.y;
+          pointer.set(e.clientX, e.clientY);
+          this.adjustCameraOrbit(dx, dy);
+        }
       }
       if (this.drag.active) this.dragMove(e);
     });
@@ -144,6 +155,7 @@ class App {
 
   adjustCameraOrbit(dx, dy) {
     if (dx === 0 && dy === 0) return;
+    if (this.cameraState.topViewActive) return;
     this.exitTopView({ snapPhi: true });
     const spherical = this.cameraState.spherical;
     spherical.theta -= dx * 0.01;
@@ -226,8 +238,33 @@ class App {
     }
   }
 
+  toggleView() {
+    if (this.cameraAnimation) this.cancelCameraAnimation();
+    if (this.cameraState.topViewActive) {
+      this.returnToOrbitView();
+    } else {
+      this.goToTopView();
+    }
+  }
+
+  storeOrbitState() {
+    const s = this.cameraState.spherical;
+    this.previousCameraState = {
+      spherical: new THREE.Spherical(s.radius, s.phi, s.theta),
+      zoom: this.camera.zoom
+    };
+  }
+
+  updateViewButton(isTopView) {
+    if (!this.topViewBtn) return;
+    this.topViewBtn.textContent = isTopView ? '3d View' : 'Top View';
+  }
+
   goToTopView() {
     this.cancelCameraAnimation();
+    if (!this.cameraState.topViewActive) {
+      this.storeOrbitState();
+    }
     const target = this.cameraState.spherical.clone();
     target.theta = 0;
     target.phi = 0;
@@ -236,6 +273,7 @@ class App {
     this.orbitZoomSnapshot = this.camera.zoom;
     this.cameraState.topViewActive = true;
     this.camera.up.copy(this.topViewUp);
+    this.updateViewButton(true);
 
     const zoom = this.computeTopViewZoom();
     this.startCameraAnimation(target, {
@@ -244,6 +282,36 @@ class App {
       zoom,
       onComplete: () => {
         this.cameraState.spherical.phi = 0;
+        this.updateCameraFromState();
+      }
+    });
+  }
+
+  returnToOrbitView() {
+    if (!this.cameraState.topViewActive) return;
+
+    const storedSpherical = this.previousCameraState?.spherical ?? this.initialOrbitSpherical;
+    const target = new THREE.Spherical(
+      storedSpherical.radius,
+      storedSpherical.phi,
+      storedSpherical.theta
+    );
+    const storedZoom = this.previousCameraState?.zoom ?? this.orbitZoomSnapshot;
+    const targetZoom = THREE.MathUtils.clamp(
+      storedZoom,
+      this.cameraZoomBounds.min,
+      this.cameraZoomBounds.max
+    );
+
+    this.exitTopView({ applyUpdate: true, restoreZoom: false });
+    this.updateViewButton(false);
+    this.startCameraAnimation(target, {
+      duration: 520,
+      easing: this.easeInOutQuad,
+      zoom: targetZoom,
+      onComplete: () => {
+        this.orbitZoomSnapshot = targetZoom;
+        this.previousCameraState = null;
         this.updateCameraFromState();
       }
     });
