@@ -29,6 +29,7 @@
       color: var(--text);
     }
     .app-shell {
+      height: 100vh;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -182,6 +183,7 @@
       flex: 1;
       display: grid;
       grid-template-columns: 1fr var(--panel-w);
+      grid-template-rows: minmax(0, 1fr);
       gap: var(--gap);
       padding: 24px 28px 16px;
       min-height: 0;
@@ -199,21 +201,6 @@
     #three-root {
       position: absolute;
       inset: 0;
-    }
-    #title-window {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,0.92);
-      border: 1px solid rgba(13,110,253,0.3);
-      border-radius: 12px;
-      padding: 12px 24px;
-      box-shadow: 0 12px 24px rgba(15,45,110,0.15);
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--accent);
-      pointer-events: none;
     }
     #hud {
       position: absolute;
@@ -271,6 +258,8 @@
       flex-direction: column;
       gap: 18px;
       box-shadow: 0 10px 24px rgba(20, 40, 80, 0.08);
+      height: 100%;
+      overflow: hidden;
       min-height: 0;
     }
     #addBoxBtn {
@@ -405,9 +394,12 @@
     @media (max-width: 1200px) {
       main#container {
         grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
       }
       #controls {
         order: -1;
+        height: auto;
+        overflow: visible;
       }
     }
   </style>
