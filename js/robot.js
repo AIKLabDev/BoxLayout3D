@@ -1,4 +1,5 @@
 import App from './App.js';
+import CoordinateAxes from './axes.js';
 
 const ROBOT_COLOR = 0x87ceeb;
 const ROBOT_PARTS = [
@@ -81,6 +82,47 @@ App.prototype.createRobotZoneMarker = function createRobotZoneMarker() {
 
   this.scene.add(marker);
   this.robotMarker = marker;
+};
+
+App.prototype.computeRobotAxisLength = function computeRobotAxisLength(bounds) {
+  if (!bounds || bounds.isEmpty()) {
+    return 180;
+  }
+  const size = bounds.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const length = Math.max(80, maxDim * 0.45);
+  return Math.min(length, 400);
+};
+
+App.prototype.updateRobotAxes = function updateRobotAxes(bounds) {
+  if (!this.robotGroup) return;
+  const axisLength = this.computeRobotAxisLength(bounds);
+  const axisOrigin = new THREE.Vector3(0, 0.02, 0);
+  if (!this.robotAxes) {
+    this.robotAxes = new CoordinateAxes({
+      name: 'robotAxes',
+      axisLength,
+      origin: axisOrigin,
+      arrowHead: {
+        lengthRatio: 0.18,
+        widthRatio: 0.12,
+        minLength: 24,
+        minWidth: 12
+      },
+      label: {
+        offsetRatio: 0.35,
+        minOffset: 18,
+        scaleRatio: 0.16,
+        minScale: 26,
+        horizontalLiftRatio: 0.035,
+        horizontalMinLift: 14
+      }
+    });
+  } else {
+    this.robotAxes.setLength(axisLength);
+    this.robotAxes.setOrigin(axisOrigin);
+  }
+  this.robotAxes.attachTo(this.robotGroup);
 };
 
 App.prototype.loadRobotIntoScene = function loadRobotIntoScene() {
@@ -169,6 +211,8 @@ App.prototype.loadRobotIntoScene = function loadRobotIntoScene() {
         robotGroup.updateWorldMatrix(true, true);
         bounds.copy(new THREE.Box3().setFromObject(robotGroup));
       }
+
+      this.updateRobotAxes(bounds);
 
       const clearance = !bounds.isEmpty()
         ? ROBOT_ZONE_MARGIN + Math.max(0, bounds.max.z)

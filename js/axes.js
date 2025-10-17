@@ -1,5 +1,21 @@
 export const DEFAULT_AXES_NAME = 'coordinateAxes';
 
+const DEFAULT_ARROW_CONFIG = {
+  lengthRatio: 0.15,
+  widthRatio: 0.07,
+  minLength: 120,
+  minWidth: 50
+};
+
+const DEFAULT_LABEL_CONFIG = {
+  offsetRatio: 0.6,
+  minOffset: 60,
+  scaleRatio: 0.1,
+  minScale: 60,
+  horizontalLiftRatio: 0.05,
+  horizontalMinLift: 60
+};
+
 function toVector3(source, fallback) {
   if (source instanceof THREE.Vector3) return source.clone();
   if (
@@ -11,6 +27,11 @@ function toVector3(source, fallback) {
     return new THREE.Vector3(source.x, source.y, source.z);
   }
   return fallback.clone();
+}
+
+function mergeConfig(base, overrides) {
+  if (!overrides) return { ...base };
+  return { ...base, ...overrides };
 }
 
 export function disposeObject3D(object) {
@@ -40,11 +61,15 @@ export default class CoordinateAxes {
   constructor({
     name = DEFAULT_AXES_NAME,
     axisLength = 1000,
-    origin = new THREE.Vector3(0, 0.02, 0)
+    origin = new THREE.Vector3(0, 0.02, 0),
+    arrowHead,
+    label
   } = {}) {
     this.name = name;
     this.axisLength = axisLength;
     this.origin = toVector3(origin, new THREE.Vector3(0, 0.02, 0));
+    this.arrowConfig = mergeConfig(DEFAULT_ARROW_CONFIG, arrowHead);
+    this.labelConfig = mergeConfig(DEFAULT_LABEL_CONFIG, label);
     this.group = null;
     this.parent = null;
     this.rebuildAxes();
@@ -73,6 +98,21 @@ export default class CoordinateAxes {
     if (this.origin.equals(nextOrigin)) return;
     this.origin.copy(nextOrigin);
     this.rebuildAxes();
+  }
+
+  setAppearance({ arrowHead, label } = {}) {
+    let updated = false;
+    if (arrowHead && Object.keys(arrowHead).length) {
+      this.arrowConfig = mergeConfig(this.arrowConfig, arrowHead);
+      updated = true;
+    }
+    if (label && Object.keys(label).length) {
+      this.labelConfig = mergeConfig(this.labelConfig, label);
+      updated = true;
+    }
+    if (updated) {
+      this.rebuildAxes();
+    }
   }
 
   getObject3D() {
@@ -106,6 +146,8 @@ export default class CoordinateAxes {
   buildAxes(axisLength) {
     const axesGroup = new THREE.Group();
     const origin = this.origin.clone();
+    const arrowConfig = this.arrowConfig;
+    const labelConfig = this.labelConfig;
 
     const axes = [
       { dir: new THREE.Vector3(1, 0, 0), color: 0xff4d4d, label: 'X' },
@@ -115,8 +157,8 @@ export default class CoordinateAxes {
 
     axes.forEach(({ dir, color, label }) => {
       const normalizedDir = dir.clone().normalize();
-      const arrowHeadLength = Math.max(120, axisLength * 0.15);
-      const arrowHeadWidth = Math.max(50, axisLength * 0.07);
+      const arrowHeadLength = Math.max(arrowConfig.minLength, axisLength * arrowConfig.lengthRatio);
+      const arrowHeadWidth = Math.max(arrowConfig.minWidth, axisLength * arrowConfig.widthRatio);
       const arrow = new THREE.ArrowHelper(
         normalizedDir,
         origin,
@@ -129,11 +171,18 @@ export default class CoordinateAxes {
 
       const labelPos = origin
         .clone()
-        .add(normalizedDir.multiplyScalar(axisLength + arrowHeadLength * 0.6));
+        .add(
+          normalizedDir.multiplyScalar(
+            axisLength + Math.max(labelConfig.minOffset, axisLength * labelConfig.offsetRatio)
+          )
+        );
       if (dir.y === 0) {
-        labelPos.y += Math.max(60, axisLength * 0.05);
+        labelPos.y += Math.max(
+          labelConfig.horizontalMinLift,
+          axisLength * labelConfig.horizontalLiftRatio
+        );
       }
-      const labelScale = Math.max(60, axisLength * 0.1);
+      const labelScale = Math.max(labelConfig.minScale, axisLength * labelConfig.scaleRatio);
       axesGroup.add(this.createAxisLabel(label, color, labelScale, labelPos));
     });
 

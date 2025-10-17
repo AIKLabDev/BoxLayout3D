@@ -10,6 +10,7 @@ export default class App {
     this.boxes = []; // {id,size:{w,h,d}, position:{x,y,z}, mesh}
     this.selectedBox = null;
     this.drag = { active:false, offset:new THREE.Vector3(), plane:null, target:null };
+    this.robotAxes = null;
     this.messageTimer = null;
 
     // Scene default construct
