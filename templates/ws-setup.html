@@ -1,41 +1,116 @@
 <div class="setup-wrapper">
   <header class="setup-header">
     <h2>WebSocket 설정</h2>
-    <p>서버 주소를 지정하고 연결을 테스트하세요. 연결 후 메시지를 전송하면 로봇 또는 중계 프로그램과 통신할 수 있습니다.</p>
+    <p>
+      로봇(서버)과의 통신을 테스트할 수 있도록 클라이언트와 로컬 서버 시뮬레이터를 제공합니다.
+      실제 장비에 연결하거나, 오른쪽의 테스트 서버를 실행한 뒤
+      <code>ws://local/&lt;ID&gt;</code> 주소로 접속해 동작을 확인해보세요.
+    </p>
   </header>
 
-  <form id="wsConnectForm" class="ws-card">
-    <label for="wsUrl">WebSocket 서버 주소</label>
-    <div class="ws-connect-row">
-      <input type="text" id="wsUrl" name="wsUrl" placeholder="ws://127.0.0.1:8080" autocomplete="url" />
-      <button type="submit" id="wsConnectBtn" class="primary-pill">연결</button>
-      <button type="button" id="wsDisconnectBtn" class="ghost-pill" disabled>연결 해제</button>
-    </div>
-    <div class="ws-status">
-      <span id="wsStatusDot" class="status-dot status-offline" aria-hidden="true"></span>
-      <span id="wsStatusText" class="status-text">연결되지 않음</span>
-    </div>
-  </form>
+  <div class="setup-columns">
+    <section class="ws-pane ws-pane-client">
+      <h3 class="ws-pane-title">WebSocket Client</h3>
+      <p class="ws-pane-desc">
+        실제 로봇 또는 테스트 서버에 연결해 메시지를 주고받을 수 있습니다.
+        연결이 완료되면 아래 입력창에서 JSON 명령을 전송해보세요.
+      </p>
 
-  <section class="ws-card">
-    <label for="wsMessageInput">메시지 전송</label>
-    <textarea id="wsMessageInput" rows="4" placeholder='예: {"command":"start"}' disabled></textarea>
-    <div class="ws-actions">
-      <button type="button" id="wsSendBtn" class="secondary-btn" disabled>전송</button>
-      <button type="button" id="wsClearLogBtn" class="ghost-pill">로그 지우기</button>
-    </div>
-  </section>
+      <form id="wsConnectForm" class="ws-card">
+        <label for="wsUrl">WebSocket 서버 주소</label>
+        <div class="ws-connect-row">
+          <input type="text" id="wsUrl" name="wsUrl" placeholder="ws://127.0.0.1:8080" autocomplete="url" />
+          <button type="submit" id="wsConnectBtn" class="primary-pill">연결</button>
+          <button type="button" id="wsDisconnectBtn" class="ghost-pill" disabled>연결 해제</button>
+        </div>
+        <div class="ws-status">
+          <span id="wsStatusDot" class="status-dot status-offline" aria-hidden="true"></span>
+          <span id="wsStatusText" class="status-text">연결되지 않음</span>
+        </div>
+      </form>
 
-  <section class="ws-card ws-log">
-    <div class="ws-log-header">
-      <h3>이벤트 로그</h3>
-      <label class="ws-checkbox">
-        <input type="checkbox" id="wsAutoScroll" checked />
-        <span>자동 스크롤</span>
-      </label>
-    </div>
-    <ul id="wsLog" class="ws-log-list" aria-live="polite" aria-label="WebSocket 이벤트 로그">
-      <li class="ws-empty-log" id="wsEmptyLog">아직 로그가 없습니다. 연결을 시작해보세요.</li>
-    </ul>
-  </section>
+      <section class="ws-card">
+        <label for="wsMessageInput">메시지 전송</label>
+        <textarea id="wsMessageInput" rows="4" placeholder='예: {"command":"start"}' disabled></textarea>
+        <div class="ws-actions">
+          <button type="button" id="wsSendBtn" class="secondary-btn" disabled>전송</button>
+          <button type="button" id="wsClearLogBtn" class="ghost-pill">로그 지우기</button>
+        </div>
+      </section>
+
+      <section class="ws-card ws-log">
+        <div class="ws-log-header">
+          <h3>클라이언트 로그</h3>
+          <label class="ws-checkbox">
+            <input type="checkbox" id="wsAutoScroll" checked />
+            <span>자동 스크롤</span>
+          </label>
+        </div>
+        <ul id="wsLog" class="ws-log-list" aria-live="polite" aria-label="WebSocket 이벤트 로그">
+          <li class="ws-empty-log" id="wsEmptyLog">아직 로그가 없습니다. 연결을 시작해보세요.</li>
+        </ul>
+      </section>
+    </section>
+
+    <section class="ws-pane ws-pane-server">
+      <h3 class="ws-pane-title">Local Test Server</h3>
+      <p class="ws-pane-desc">
+        브라우저 안에서 실행되는 단순 WebSocket 서버입니다.
+        클라이언트에서 <code>ws://local/&lt;ID&gt;</code> 주소로 접속하면 연결됩니다.
+      </p>
+
+      <form id="wsServerForm" class="ws-card">
+        <label for="wsServerId">서버 ID</label>
+        <div class="ws-connect-row">
+          <input type="text" id="wsServerId" name="wsServerId" placeholder="local-sim" autocomplete="off" />
+          <button type="submit" id="wsServerStartBtn" class="primary-pill">서버 시작</button>
+          <button type="button" id="wsServerStopBtn" class="ghost-pill" disabled>서버 중지</button>
+        </div>
+        <p class="ws-helper">클라이언트 URL 예시: <code>ws://local/local-sim</code></p>
+        <div class="ws-status">
+          <span id="wsServerStatusDot" class="status-dot status-offline" aria-hidden="true"></span>
+          <span id="wsServerStatusText" class="status-text">서버 중지됨</span>
+        </div>
+      </form>
+
+      <section class="ws-card">
+        <h4 class="ws-card-title">연결된 클라이언트</h4>
+        <ul
+          id="wsServerClients"
+          class="ws-client-list"
+          aria-live="polite"
+          aria-label="연결된 클라이언트 목록"
+        >
+          <li class="ws-empty-log" id="wsServerClientsEmpty">현재 연결된 클라이언트가 없습니다.</li>
+        </ul>
+      </section>
+
+      <section class="ws-card">
+        <label for="wsServerMessageInput">브로드캐스트 메시지</label>
+        <textarea
+          id="wsServerMessageInput"
+          rows="4"
+          placeholder='예: {"status":"ready"}'
+          disabled
+        ></textarea>
+        <div class="ws-actions">
+          <button type="button" id="wsServerSendBtn" class="secondary-btn" disabled>전송</button>
+          <button type="button" id="wsServerClearLogBtn" class="ghost-pill">로그 지우기</button>
+        </div>
+      </section>
+
+      <section class="ws-card ws-log">
+        <div class="ws-log-header">
+          <h3>서버 로그</h3>
+          <label class="ws-checkbox">
+            <input type="checkbox" id="wsServerAutoScroll" checked />
+            <span>자동 스크롤</span>
+          </label>
+        </div>
+        <ul id="wsServerLog" class="ws-log-list" aria-live="polite" aria-label="서버 이벤트 로그">
+          <li class="ws-empty-log" id="wsServerEmptyLog">서버 로그가 아직 없습니다.</li>
+        </ul>
+      </section>
+    </section>
+  </div>
 </div>
