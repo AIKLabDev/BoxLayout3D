@@ -1,0 +1,226 @@
+.view-panel {
+  flex: 1;
+}
+
+.view-hidden {
+  display: none !important;
+}
+
+#setup-panel {
+  background: linear-gradient(135deg, #eef3ff 0%, #f7f9ff 100%);
+  padding: 32px;
+  overflow-y: auto;
+}
+
+.setup-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.setup-wrapper {
+  max-width: 760px;
+  margin: 0 auto 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.setup-header h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  color: var(--nav-blue);
+}
+
+.setup-header p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.ws-card {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(13, 79, 215, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ws-card label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.ws-connect-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+}
+
+.ws-connect-row input {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-size: 16px;
+}
+
+.ws-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.1);
+}
+
+.status-online {
+  background: var(--success);
+}
+
+.status-connecting {
+  background: var(--accent);
+}
+
+.status-error {
+  background: var(--danger);
+}
+
+.status-offline {
+  background: var(--border);
+}
+
+.status-text {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ws-card textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+}
+
+.ws-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ws-log {
+  margin-bottom: 32px;
+}
+
+.ws-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ws-log-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.ws-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ws-checkbox input {
+  accent-color: var(--accent);
+}
+
+.ws-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ws-log-list li {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(13, 79, 215, 0.08);
+  font-size: 13px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ws-log-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.ws-log-meta .ws-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ws-badge-info {
+  background: rgba(13, 110, 253, 0.1);
+  color: var(--accent);
+}
+
+.ws-badge-send {
+  background: rgba(40, 183, 70, 0.12);
+  color: var(--success);
+}
+
+.ws-badge-recv {
+  background: rgba(13, 79, 215, 0.12);
+  color: var(--nav-blue);
+}
+
+.ws-badge-error {
+  background: rgba(243, 108, 108, 0.15);
+  color: var(--danger);
+}
+
+.ws-log-message {
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.ws-empty-log {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
+  border: 1px dashed var(--border);
+}

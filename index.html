@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AIKorea Boxlayout3D</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/setup.css">
 </head>
 <body>
   <div class="app-shell">
@@ -17,8 +18,8 @@
         </div>
       </div>
       <nav class="top-menu">
-        <button class="menu-item is-active">CR20A</button>
-        <button class="menu-item">[Reserve]Setup</button>
+        <button class="menu-item is-active" data-view-target="workspace" id="workspaceNavBtn">CR20A</button>
+        <button class="menu-item" data-view-target="setup" id="setupNavBtn">Setup</button>
         <button class="menu-item">[Reserve]Log</button>
       </nav>
       <div class="top-actions">
@@ -38,7 +39,7 @@
         <span class="meta-value">[Reserve]AI Korea Lab</span>
       </div>
     </div>
-    <main id="container">
+    <main id="container" class="view-panel" data-view="workspace">
       <div id="scene-wrap">
         <div id="hud">
           <h2>3D Box Layout</h2>
@@ -60,6 +61,17 @@
         <div id="boxList"></div>
       </aside>
     </main>
+
+    <section
+      id="setup-panel"
+      class="view-panel view-hidden"
+      data-view="setup"
+      data-template="templates/ws-setup.html"
+    >
+      <div class="setup-placeholder" role="status">
+        <span>설정 화면을 불러오는 중...</span>
+      </div>
+    </section>
 
     <footer class="status-bar">
       <div class="status-group">

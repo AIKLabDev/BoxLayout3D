@@ -6,5 +6,6 @@ import './snap.js';
 import './boxes.js';
 import './interactions.js';
 import './robot.js';
+import './setup.js';
 
 window.app = new App();
