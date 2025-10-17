@@ -48,6 +48,9 @@ function switchView(target) {
   if (target === 'workspace' && window.app?.onResize) {
     requestAnimationFrame(() => window.app.onResize());
   }
+  if (target === 'boxlayout' && window.mainApp?.workspace?.updateBoxList) {
+    window.mainApp.workspace.updateBoxList();
+  }
 }
 
 function updateStatus(state, message) {

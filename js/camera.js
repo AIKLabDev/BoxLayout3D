@@ -1,6 +1,6 @@
-import App from './App.js';
+import WorkspaceScene from './scenes/WorkspaceScene.js';
 
-App.prototype.adjustCameraOrbit = function adjustCameraOrbit(dx, dy) {
+WorkspaceScene.prototype.adjustCameraOrbit = function adjustCameraOrbit(dx, dy) {
   if (dx === 0 && dy === 0) return;
   if (this.cameraState.topViewActive) return;
   this.exitTopView({ snapPhi: true });
@@ -11,7 +11,7 @@ App.prototype.adjustCameraOrbit = function adjustCameraOrbit(dx, dy) {
   this.updateCameraFromState();
 };
 
-App.prototype.handleWheel = function handleWheel(deltaY) {
+WorkspaceScene.prototype.handleWheel = function handleWheel(deltaY) {
   this.cancelCameraAnimation();
   const zoomFactor = deltaY > 0 ? 0.9 : 1.1;
   this.camera.zoom = THREE.MathUtils.clamp(
@@ -30,11 +30,11 @@ App.prototype.handleWheel = function handleWheel(deltaY) {
   this.updateCameraFromState();
 };
 
-App.prototype.cancelCameraAnimation = function cancelCameraAnimation() {
+WorkspaceScene.prototype.cancelCameraAnimation = function cancelCameraAnimation() {
   this.cameraAnimation = null;
 };
 
-App.prototype.startCameraAnimation = function startCameraAnimation(targetSpherical, options = {}) {
+WorkspaceScene.prototype.startCameraAnimation = function startCameraAnimation(targetSpherical, options = {}) {
   const target = targetSpherical.clone();
   const minPhi = this.cameraState.topViewActive ? 0 : this.cameraState.minPhi;
   target.phi = THREE.MathUtils.clamp(target.phi, minPhi, this.cameraState.maxPhi);
@@ -61,7 +61,7 @@ App.prototype.startCameraAnimation = function startCameraAnimation(targetSpheric
   };
 };
 
-App.prototype.tickCameraAnimation = function tickCameraAnimation() {
+WorkspaceScene.prototype.tickCameraAnimation = function tickCameraAnimation() {
   if (!this.cameraAnimation) return;
 
   const { start, duration, from, to, easing, zoomFrom, zoomTo, onComplete } = this.cameraAnimation;
@@ -89,7 +89,7 @@ App.prototype.tickCameraAnimation = function tickCameraAnimation() {
   }
 };
 
-App.prototype.toggleView = function toggleView() {
+WorkspaceScene.prototype.toggleView = function toggleView() {
   if (this.cameraAnimation) this.cancelCameraAnimation();
   if (this.cameraState.topViewActive) {
     this.returnToOrbitView();
@@ -98,7 +98,7 @@ App.prototype.toggleView = function toggleView() {
   }
 };
 
-App.prototype.storeOrbitState = function storeOrbitState() {
+WorkspaceScene.prototype.storeOrbitState = function storeOrbitState() {
   const s = this.cameraState.spherical;
   this.previousCameraState = {
     spherical: new THREE.Spherical(s.radius, s.phi, s.theta),
@@ -106,12 +106,12 @@ App.prototype.storeOrbitState = function storeOrbitState() {
   };
 };
 
-App.prototype.updateViewButton = function updateViewButton(isTopView) {
+WorkspaceScene.prototype.updateViewButton = function updateViewButton(isTopView) {
   if (!this.topViewBtn) return;
   this.topViewBtn.textContent = isTopView ? '3d View' : 'Top View';
 };
 
-App.prototype.goToTopView = function goToTopView() {
+WorkspaceScene.prototype.goToTopView = function goToTopView() {
   this.cancelCameraAnimation();
   if (!this.cameraState.topViewActive) {
     this.storeOrbitState();
@@ -138,7 +138,7 @@ App.prototype.goToTopView = function goToTopView() {
   });
 };
 
-App.prototype.returnToOrbitView = function returnToOrbitView() {
+WorkspaceScene.prototype.returnToOrbitView = function returnToOrbitView() {
   if (!this.cameraState.topViewActive) return;
 
   const storedSpherical = this.previousCameraState?.spherical ?? this.initialOrbitSpherical;
@@ -168,7 +168,7 @@ App.prototype.returnToOrbitView = function returnToOrbitView() {
   });
 };
 
-App.prototype.exitTopView = function exitTopView({ applyUpdate = false, restoreZoom = false, snapPhi = false } = {}) {
+WorkspaceScene.prototype.exitTopView = function exitTopView({ applyUpdate = false, restoreZoom = false, snapPhi = false } = {}) {
   if (!this.cameraState.topViewActive) return false;
   this.cameraState.topViewActive = false;
   this.camera.up.copy(this.defaultUp);
@@ -190,7 +190,7 @@ App.prototype.exitTopView = function exitTopView({ applyUpdate = false, restoreZ
   return true;
 };
 
-App.prototype.clampSpherical = function clampSpherical() {
+WorkspaceScene.prototype.clampSpherical = function clampSpherical() {
   const s = this.cameraState.spherical;
   const twoPi = Math.PI * 2;
   s.theta = ((s.theta % twoPi) + twoPi) % twoPi;
@@ -199,7 +199,7 @@ App.prototype.clampSpherical = function clampSpherical() {
   s.radius = THREE.MathUtils.clamp(s.radius, this.cameraState.minRadius, this.cameraState.maxRadius);
 };
 
-App.prototype.lerpAngle = function lerpAngle(a, b, t) {
+WorkspaceScene.prototype.lerpAngle = function lerpAngle(a, b, t) {
   const twoPi = Math.PI * 2;
   let diff = (b - a) % twoPi;
   if (diff < -Math.PI) diff += twoPi;
@@ -207,14 +207,14 @@ App.prototype.lerpAngle = function lerpAngle(a, b, t) {
   return a + diff * t;
 };
 
-App.prototype.updateCameraFromState = function updateCameraFromState() {
+WorkspaceScene.prototype.updateCameraFromState = function updateCameraFromState() {
   this.clampSpherical();
   this.camera.position.setFromSpherical(this.cameraState.spherical);
   this.camera.up.copy(this.cameraState.topViewActive ? this.topViewUp : this.defaultUp);
   this.camera.lookAt(this.cameraTarget);
 };
 
-App.prototype.computeTopViewZoom = function computeTopViewZoom() {
+WorkspaceScene.prototype.computeTopViewZoom = function computeTopViewZoom() {
   const aspect = (window.innerWidth - 340) / window.innerHeight;
   const requiredVertical = this.spaceSize.depth * 1.1;
   const requiredHorizontal = this.spaceSize.width * 1.1;
@@ -224,6 +224,6 @@ App.prototype.computeTopViewZoom = function computeTopViewZoom() {
   return THREE.MathUtils.clamp(targetZoom, this.cameraZoomBounds.min, this.cameraZoomBounds.max);
 };
 
-App.prototype.easeInOutQuad = function easeInOutQuad(t) {
+WorkspaceScene.prototype.easeInOutQuad = function easeInOutQuad(t) {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 };

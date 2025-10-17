@@ -1,4 +1,4 @@
-import App from './App.js';
+import WorkspaceScene from './scenes/WorkspaceScene.js';
 import CoordinateAxes from './axes.js';
 
 const ROBOT_COLOR = 0x87ceeb;
@@ -16,7 +16,7 @@ const ROBOT_ZONE_MARGIN = 160;
 const ROBOT_LABEL_SIZE = 220;
 const ROBOT_DEFAULT_FORWARD_CLEARANCE = 320;
 
-App.prototype.getRobotHomePosition = function getRobotHomePosition() {
+WorkspaceScene.prototype.getRobotHomePosition = function getRobotHomePosition() {
   const halfDepth = this.spaceSize.depth / 2;
   const clearance = this.robotForwardClearance ?? ROBOT_DEFAULT_FORWARD_CLEARANCE;
   return {
@@ -25,7 +25,7 @@ App.prototype.getRobotHomePosition = function getRobotHomePosition() {
   };
 };
 
-App.prototype.disposeRobotMarker = function disposeRobotMarker() {
+WorkspaceScene.prototype.disposeRobotMarker = function disposeRobotMarker() {
   if (!this.robotMarker) return;
   this.scene.remove(this.robotMarker);
   if (this.robotMarker.material) {
@@ -40,7 +40,7 @@ App.prototype.disposeRobotMarker = function disposeRobotMarker() {
   this.robotMarker = null;
 };
 
-App.prototype.createRobotZoneMarker = function createRobotZoneMarker() {
+WorkspaceScene.prototype.createRobotZoneMarker = function createRobotZoneMarker() {
   const position = this.getRobotHomePosition();
   this.disposeRobotMarker();
 
@@ -84,7 +84,7 @@ App.prototype.createRobotZoneMarker = function createRobotZoneMarker() {
   this.robotMarker = marker;
 };
 
-App.prototype.computeRobotAxisLength = function computeRobotAxisLength(bounds) {
+WorkspaceScene.prototype.computeRobotAxisLength = function computeRobotAxisLength(bounds) {
   if (!bounds || bounds.isEmpty()) {
     return 180;
   }
@@ -94,7 +94,7 @@ App.prototype.computeRobotAxisLength = function computeRobotAxisLength(bounds) {
   return Math.min(length, 400);
 };
 
-App.prototype.updateRobotAxes = function updateRobotAxes(bounds) {
+WorkspaceScene.prototype.updateRobotAxes = function updateRobotAxes(bounds) {
   if (!this.robotGroup) return;
   const axisLength = this.computeRobotAxisLength(bounds);
   const axisOrigin = new THREE.Vector3(0, 0.02, 0);
@@ -125,7 +125,7 @@ App.prototype.updateRobotAxes = function updateRobotAxes(bounds) {
   this.robotAxes.attachTo(this.robotGroup);
 };
 
-App.prototype.loadRobotIntoScene = function loadRobotIntoScene() {
+WorkspaceScene.prototype.loadRobotIntoScene = function loadRobotIntoScene() {
   if (typeof THREE === 'undefined' || typeof THREE.STLLoader !== 'function') {
     console.warn('STLLoader가 로드되지 않아 로봇 모델을 불러올 수 없습니다.');
     return;
