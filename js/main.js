@@ -1,5 +1,6 @@
 import App from './App.js';
 import MessageBox from './ui/messageBox.js';
+import UIComponentDemo from './ui/UIComponentDemo.js';
 import './scene.js';
 import './camera.js';
 import './labels.js';
@@ -31,6 +32,12 @@ async function bootstrapUI() {
       })
     ]);
 
+    const controlsPane = document.getElementById('controls');
+    const uiComponentDemo = new UIComponentDemo({
+      parent: controlsPane || document.body
+    });
+    await uiComponentDemo.ready;
+
     const popupButton = document.getElementById('popupButton');
     if (popupButton) {
       popupButton.addEventListener('click', () => {
@@ -44,8 +51,15 @@ async function bootstrapUI() {
         modalBox.show('hello', { title: 'Message Box' });
       });
     }
+
+    const uiComponentButton = document.getElementById('uiComponentButton');
+    if (uiComponentButton) {
+      uiComponentButton.addEventListener('click', () => {
+        uiComponentDemo.toggle();
+      });
+    }
   } catch (error) {
-    console.error('Failed to initialize message boxes', error);
+    console.error('Failed to initialize UI components', error);
   }
 }
 
