@@ -203,7 +203,7 @@ main#container {
   gap: var(--gap);
   min-height: 0;
 }
-#secondaryScene,
+#currentLayoutScene,
 #cameraScene {
   flex: 1;
 }
@@ -226,7 +226,7 @@ main#container {
   min-height: 0;
   background: #0f182a;
 }
-#secondaryScene .pane-body,
+#currentLayoutScene .pane-body,
 #cameraScene .pane-body {
   min-height: 280px;
 }

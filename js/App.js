@@ -1,11 +1,11 @@
 import WorkspaceScene from './scenes/WorkspaceScene.js';
-import AuxiliaryScene from './scenes/AuxiliaryScene.js';
+import BoxLayoutPreview from './scenes/BoxLayoutPreview.js';
 import CameraScene from './scenes/CameraScene.js';
 
 export default class App {
   constructor() {
     this.workspace = new WorkspaceScene();
-    this.secondary3d = new AuxiliaryScene({
+    this.secondary3d = new BoxLayoutPreview({
       containerId: 'aux-three-root',
       workspace: this.workspace
     });
