@@ -72,6 +72,7 @@ export default class App {
 
     // draw space, floor, line
     this.drawSpace();
+    this.loadRobotIntoScene();
 
     this.setupControls();
 

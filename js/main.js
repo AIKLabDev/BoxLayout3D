@@ -5,5 +5,6 @@ import './labels.js';
 import './snap.js';
 import './boxes.js';
 import './interactions.js';
+import './robot.js';
 
 window.app = new App();
