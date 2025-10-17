@@ -94,6 +94,15 @@ body {
 .menu-item.is-active {
   background: rgba(255,255,255,0.22);
 }
+.menu-label {
+  padding: 10px 16px;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.18);
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
 .top-actions {
   margin-left: auto;
   display: flex;

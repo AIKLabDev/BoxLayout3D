@@ -6,5 +6,8 @@ import './snap.js';
 import './boxes.js';
 import './interactions.js';
 import './robot.js';
+import './setup.js';
 
 window.app = new App();
+window.setConnectedRobotName = (name) => window.app?.setConnectedRobotName(name);
+window.setSceneName = (name) => window.app?.setSceneName(name);

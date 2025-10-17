@@ -13,6 +13,11 @@ export default class App {
     this.robotAxes = null;
     this.messageTimer = null;
 
+    this.mainViewButton = document.getElementById('mainViewNavBtn');
+    this.robotNameDisplay = document.getElementById('connectedRobotName');
+    this.currentSceneName = this.mainViewButton?.textContent?.trim() || 'Main View';
+    this.connectedRobotName = this.robotNameDisplay?.textContent?.trim() || '연결 없음';
+
     // Scene default construct
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xf2f5fb);
@@ -99,6 +104,8 @@ export default class App {
     window.addEventListener('resize', () => this.onResize());
     this.updateHud();
     this.updateBoxList();
+    this.updateSceneButtonLabel();
+    this.updateConnectedRobotDisplay();
 
     this.animate();
   }
@@ -136,5 +143,29 @@ export default class App {
     requestAnimationFrame(() => this.animate());
     this.tickCameraAnimation();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  updateSceneButtonLabel() {
+    if (!this.mainViewButton) return;
+    const label = this.currentSceneName?.trim() || 'Main View';
+    this.mainViewButton.textContent = label;
+  }
+
+  setSceneName(name) {
+    const label = typeof name === 'string' ? name.trim() : '';
+    this.currentSceneName = label || 'Main View';
+    this.updateSceneButtonLabel();
+  }
+
+  updateConnectedRobotDisplay() {
+    if (!this.robotNameDisplay) return;
+    const label = this.connectedRobotName?.trim() || '연결 없음';
+    this.robotNameDisplay.textContent = label;
+  }
+
+  setConnectedRobotName(name) {
+    const label = typeof name === 'string' ? name.trim() : '';
+    this.connectedRobotName = label || '연결 없음';
+    this.updateConnectedRobotDisplay();
   }
 }
