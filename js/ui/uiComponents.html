@@ -1,0 +1,79 @@
+<div class="ui-component-panel" data-ui-component-panel aria-hidden="true">
+  <header class="ui-component-panel__header">
+    <h2 class="ui-component-panel__title">UI Component Lab</h2>
+    <button class="ui-component-panel__close" type="button" aria-label="Close UI component panel" data-ui-panel-close>&times;</button>
+  </header>
+  <div class="ui-component-panel__body">
+    <section class="ui-component-group">
+      <h3 class="ui-component-group__title">Edit box</h3>
+      <p class="ui-component-group__desc">텍스트를 입력해 보세요.</p>
+      <input type="text" placeholder="Type anything..." data-ui-editbox />
+    </section>
+
+    <section class="ui-component-group">
+      <h3 class="ui-component-group__title">Toggle button</h3>
+      <p class="ui-component-group__desc">상태를 토글하면 레이블이 업데이트됩니다.</p>
+      <label class="ui-toggle">
+        <input class="ui-toggle__input" type="checkbox" data-ui-toggle />
+        <span class="ui-toggle__track">
+          <span class="ui-toggle__thumb"></span>
+        </span>
+        <span data-ui-toggle-label>Off</span>
+      </label>
+    </section>
+
+    <section class="ui-component-group">
+      <h3 class="ui-component-group__title">Directional buttons</h3>
+      <p class="ui-component-group__desc">마우스로 누르면 현재 방향과 눌림 상태가 표시됩니다.</p>
+      <div class="ui-dpad" data-ui-dpad>
+        <span></span>
+        <button type="button" data-direction="up">Up</button>
+        <span></span>
+        <button type="button" data-direction="left">Left</button>
+        <span></span>
+        <button type="button" data-direction="right">Right</button>
+        <span></span>
+        <button type="button" data-direction="down">Down</button>
+        <span></span>
+      </div>
+      <div class="ui-dpad__status" data-ui-dpad-status>Waiting for input…</div>
+    </section>
+
+    <section class="ui-component-group">
+      <h3 class="ui-component-group__title">Text display</h3>
+      <p class="ui-component-group__desc">아래 텍스트는 Edit box 값과 연결됩니다.</p>
+      <div class="ui-component-text" data-ui-text>입력한 내용이 여기에 표시됩니다.</div>
+    </section>
+
+    <section class="ui-component-group">
+      <h3 class="ui-component-group__title">State button</h3>
+      <p class="ui-component-group__desc">버튼을 눌러 상태를 On/Off로 전환합니다.</p>
+      <button type="button" class="ui-status-button is-off" data-ui-status-button>OFF</button>
+    </section>
+
+    <section class="ui-component-group">
+      <h3 class="ui-component-group__title">Dropdown</h3>
+      <p class="ui-component-group__desc">드롭다운을 선택하면 아래 텍스트가 변경됩니다.</p>
+      <select data-ui-dropdown>
+        <option value="">항목을 선택하세요</option>
+        <option>Alpha</option>
+        <option>Bravo</option>
+        <option>Charlie</option>
+        <option>Delta</option>
+      </select>
+      <div class="ui-component-group__desc" data-ui-dropdown-value>선택된 항목이 없습니다.</div>
+    </section>
+
+    <section class="ui-component-group">
+      <h3 class="ui-component-group__title">List UI</h3>
+      <p class="ui-component-group__desc">간단한 리스트 샘플입니다.</p>
+      <ul class="ui-list">
+        <li tabindex="0">Task Item 01</li>
+        <li tabindex="0">Task Item 02</li>
+        <li tabindex="0">Task Item 03</li>
+        <li tabindex="0">Task Item 04</li>
+      </ul>
+    </section>
+  </div>
+  <div class="ui-component-panel__footer">실험용 UI 컴포넌트 모음</div>
+</div>

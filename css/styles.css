@@ -247,6 +247,7 @@ canvas { display: block; }
   box-shadow: 0 8px 18px rgba(13,110,253,0.3);
 }
 #controls {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
