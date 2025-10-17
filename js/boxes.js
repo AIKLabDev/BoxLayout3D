@@ -1,6 +1,6 @@
-import App from './App.js';
+import WorkspaceScene from './scenes/WorkspaceScene.js';
 
-App.prototype.addBox = function addBox() {
+WorkspaceScene.prototype.addBox = function addBox() {
   const id = this.boxes.length ? Math.max(...this.boxes.map((b) => b.id)) + 1 : 0;
 
   const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -18,7 +18,7 @@ App.prototype.addBox = function addBox() {
   this.updateHud();
 };
 
-App.prototype.createBoxFromData = function createBoxFromData({ id, size, position, color }) {
+WorkspaceScene.prototype.createBoxFromData = function createBoxFromData({ id, size, position, color }) {
   const sanitizedSize = {
     w: Math.max(1, size?.w ?? 1),
     h: Math.max(1, size?.h ?? 1),
@@ -56,7 +56,7 @@ App.prototype.createBoxFromData = function createBoxFromData({ id, size, positio
   return box;
 };
 
-App.prototype.setBoxHighlight = function setBoxHighlight(box, active) {
+WorkspaceScene.prototype.setBoxHighlight = function setBoxHighlight(box, active) {
   if (!box || !box.mesh) return;
 
   const mat = box.mesh.material;
@@ -74,14 +74,14 @@ App.prototype.setBoxHighlight = function setBoxHighlight(box, active) {
   this.setLabelHighlight(box, active);
 };
 
-App.prototype.selectBox = function selectBox(idOrNull) {
+WorkspaceScene.prototype.selectBox = function selectBox(idOrNull) {
   if (this.selectedBox) this.setBoxHighlight(this.selectedBox, false);
   this.selectedBox = this.boxes.find((b) => b.id === idOrNull) || null;
   if (this.selectedBox) this.setBoxHighlight(this.selectedBox, true);
   this.updateBoxList();
 };
 
-App.prototype.deleteBox = function deleteBox(id) {
+WorkspaceScene.prototype.deleteBox = function deleteBox(id) {
   const idx = this.boxes.findIndex((b) => b.id === id);
   if (idx >= 0) {
     const box = this.boxes[idx];
@@ -104,7 +104,7 @@ App.prototype.deleteBox = function deleteBox(id) {
   }
 };
 
-App.prototype.updateBoxSize = function updateBoxSize(box) {
+WorkspaceScene.prototype.updateBoxSize = function updateBoxSize(box) {
   if (!box) return;
   const w = Math.max(1, parseFloat(document.getElementById(`w-${box.id}`).value));
   const h = Math.max(1, parseFloat(document.getElementById(`h-${box.id}`).value));
@@ -122,8 +122,9 @@ App.prototype.updateBoxSize = function updateBoxSize(box) {
   this.updateBoxList();
 };
 
-App.prototype.updateBoxList = function updateBoxList() {
-  const list = document.getElementById('boxList');
+WorkspaceScene.prototype.updateBoxList = function updateBoxList() {
+  const list = this.getControlElement('boxList') || document.getElementById('boxList');
+  if (!list) return;
   list.innerHTML = '';
   this.boxes.forEach((b) => {
     const selected = this.selectedBox && this.selectedBox.id === b.id;
@@ -159,15 +160,16 @@ App.prototype.updateBoxList = function updateBoxList() {
   this.updateHud();
 };
 
-App.prototype.updateHud = function updateHud() {
+WorkspaceScene.prototype.updateHud = function updateHud() {
   const labelSpace = '공간 크기';
   const labelCount = '박스 개수';
   document.getElementById('spaceInfo').textContent =
     `${labelSpace}: ${this.spaceSize.width}mm x ${this.spaceSize.depth}mm x ${this.spaceSize.height}mm`;
-  document.getElementById('boxCount').textContent = '${labelCount}: ${this.boxes.length}';
+  document.getElementById('boxCount').textContent =
+    `${labelCount}: ${this.boxes.length}`;
 };
 
-App.prototype.exportLayoutData = function exportLayoutData() {
+WorkspaceScene.prototype.exportLayoutData = function exportLayoutData() {
   return {
     version: 1,
     spaceSize: { ...this.spaceSize },
@@ -180,7 +182,7 @@ App.prototype.exportLayoutData = function exportLayoutData() {
   };
 };
 
-App.prototype.saveLayout = function saveLayout() {
+WorkspaceScene.prototype.saveLayout = function saveLayout() {
   try {
     const data = this.exportLayoutData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -200,13 +202,14 @@ App.prototype.saveLayout = function saveLayout() {
   }
 };
 
-App.prototype.promptLoadLayout = function promptLoadLayout() {
-  if (!this.loadInput) return;
-  this.loadInput.value = '';
-  this.loadInput.click();
+WorkspaceScene.prototype.promptLoadLayout = function promptLoadLayout() {
+  const input = this.getControlElement('loadInput');
+  if (!input) return;
+  input.value = '';
+  input.click();
 };
 
-App.prototype.handleLoadFile = function handleLoadFile(event) {
+WorkspaceScene.prototype.handleLoadFile = function handleLoadFile(event) {
   const input = event.target;
   const file = input.files && input.files[0];
   if (!file) return;
@@ -230,7 +233,7 @@ App.prototype.handleLoadFile = function handleLoadFile(event) {
   reader.readAsText(file);
 };
 
-App.prototype.applyLayoutData = function applyLayoutData(data) {
+WorkspaceScene.prototype.applyLayoutData = function applyLayoutData(data) {
   if (!data || !Array.isArray(data.boxes)) {
     throw new Error('Invalid layout data');
   }
@@ -262,7 +265,7 @@ App.prototype.applyLayoutData = function applyLayoutData(data) {
   this.updateHud();
 };
 
-App.prototype.clearBoxes = function clearBoxes() {
+WorkspaceScene.prototype.clearBoxes = function clearBoxes() {
   for (const box of this.boxes) {
     if (box.mesh) {
       this.scene.remove(box.mesh);
@@ -290,9 +293,10 @@ App.prototype.clearBoxes = function clearBoxes() {
   }
   this.boxes = [];
   this.selectedBox = null;
+  this.updateBoxList();
 };
 
-App.prototype.showMessage = function showMessage(message, type = 'info', duration = 4000) {
+WorkspaceScene.prototype.showMessage = function showMessage(message, type = 'info', duration = 4000) {
   const el = document.getElementById('error-message');
   if (!el) return;
   el.textContent = message;

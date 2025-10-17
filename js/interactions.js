@@ -1,6 +1,6 @@
-import App from './App.js';
+import WorkspaceScene from './scenes/WorkspaceScene.js';
 
-App.prototype.setupControls = function setupControls() {
+WorkspaceScene.prototype.setupControls = function setupControls() {
   const el = this.renderer.domElement;
   let rotating = false;
   const pointer = this.pointer;
@@ -44,7 +44,7 @@ App.prototype.setupControls = function setupControls() {
   );
 };
 
-App.prototype.raycastFromMouse = function raycastFromMouse(event) {
+WorkspaceScene.prototype.raycastFromMouse = function raycastFromMouse(event) {
   const rect = this.renderer.domElement.getBoundingClientRect();
   const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -54,7 +54,7 @@ App.prototype.raycastFromMouse = function raycastFromMouse(event) {
   return raycaster;
 };
 
-App.prototype.tryStartDrag = function tryStartDrag(event) {
+WorkspaceScene.prototype.tryStartDrag = function tryStartDrag(event) {
   const raycaster = this.raycastFromMouse(event);
   const intersects = raycaster.intersectObjects(this.boxes.map((b) => b.mesh), false);
   if (intersects.length) {
@@ -73,7 +73,7 @@ App.prototype.tryStartDrag = function tryStartDrag(event) {
   }
 };
 
-App.prototype.dragMove = function dragMove(event) {
+WorkspaceScene.prototype.dragMove = function dragMove(event) {
   const { plane, offset, target } = this.drag;
   const raycaster = this.raycastFromMouse(event);
   const hit = new THREE.Vector3();
@@ -94,6 +94,6 @@ App.prototype.dragMove = function dragMove(event) {
   this.updateBoxList();
 };
 
-App.prototype.endDrag = function endDrag() {
+WorkspaceScene.prototype.endDrag = function endDrag() {
   this.drag.active = false;
 };

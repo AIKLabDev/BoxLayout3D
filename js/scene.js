@@ -1,6 +1,6 @@
-import App from './App.js';
+import WorkspaceScene from './scenes/WorkspaceScene.js';
 
-App.prototype.drawSpace = function drawSpace() {
+WorkspaceScene.prototype.drawSpace = function drawSpace() {
   const { width, height, depth } = this.spaceSize;
 
   // Wireframe bounds

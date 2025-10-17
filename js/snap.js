@@ -1,6 +1,6 @@
-import App from './App.js';
+import WorkspaceScene from './scenes/WorkspaceScene.js';
 
-App.prototype.findBestSnapPosition = function findBestSnapPosition(box, considerBelowOnly = false) {
+WorkspaceScene.prototype.findBestSnapPosition = function findBestSnapPosition(box, considerBelowOnly = false) {
   let bestY = box.size.h / 2;
   for (const other of this.boxes) {
     if (other === box) continue;
@@ -18,7 +18,7 @@ App.prototype.findBestSnapPosition = function findBestSnapPosition(box, consider
   return bestY;
 };
 
-App.prototype.computeDraggedY = function computeDraggedY(box, prevY) {
+WorkspaceScene.prototype.computeDraggedY = function computeDraggedY(box, prevY) {
   const eps = 1e-3;
   const h2 = box.size.h / 2;
   const bottom = prevY - h2;
@@ -48,7 +48,7 @@ App.prototype.computeDraggedY = function computeDraggedY(box, prevY) {
   return y;
 };
 
-App.prototype.rectOverlapXZ = function rectOverlapXZ(a, b) {
+WorkspaceScene.prototype.rectOverlapXZ = function rectOverlapXZ(a, b) {
   const ax1 = a.position.x - a.size.w / 2;
   const ax2 = a.position.x + a.size.w / 2;
   const az1 = a.position.z - a.size.d / 2;
@@ -62,7 +62,7 @@ App.prototype.rectOverlapXZ = function rectOverlapXZ(a, b) {
   return xOverlap && zOverlap;
 };
 
-App.prototype.resolveStacks = function resolveStacks(exclude = null) {
+WorkspaceScene.prototype.resolveStacks = function resolveStacks(exclude = null) {
   let changed = true;
   let guard = 0;
   while (changed && guard++ < 10) {

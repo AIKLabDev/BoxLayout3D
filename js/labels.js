@@ -1,6 +1,6 @@
-import App from './App.js';
+import WorkspaceScene from './scenes/WorkspaceScene.js';
 
-App.prototype.createBoxLabelSprite = function createBoxLabelSprite(text) {
+WorkspaceScene.prototype.createBoxLabelSprite = function createBoxLabelSprite(text) {
   const size = 128;
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -35,7 +35,7 @@ App.prototype.createBoxLabelSprite = function createBoxLabelSprite(text) {
   return sprite;
 };
 
-App.prototype.drawLabelCanvas = function drawLabelCanvas(ctx, size, text, style = {}) {
+WorkspaceScene.prototype.drawLabelCanvas = function drawLabelCanvas(ctx, size, text, style = {}) {
   const backgroundColor = style.backgroundColor ?? 'rgba(33,37,41,0.8)';
   const textColor = style.textColor ?? '#ffffff';
   ctx.clearRect(0, 0, size, size);
@@ -51,7 +51,7 @@ App.prototype.drawLabelCanvas = function drawLabelCanvas(ctx, size, text, style 
   ctx.fillText(String(text), size / 2, size / 2);
 };
 
-App.prototype.updateBoxLabelTexture = function updateBoxLabelTexture(box) {
+WorkspaceScene.prototype.updateBoxLabelTexture = function updateBoxLabelTexture(box) {
   if (!box.label) return;
   const desired = String(box.id);
   if (box.label.userData.text === desired) return;
@@ -67,7 +67,7 @@ App.prototype.updateBoxLabelTexture = function updateBoxLabelTexture(box) {
   }
 };
 
-App.prototype.applyLabelStyle = function applyLabelStyle(label, overrides = {}) {
+WorkspaceScene.prototype.applyLabelStyle = function applyLabelStyle(label, overrides = {}) {
   if (!label || !label.userData) return;
   const style = { ...(label.userData.style ?? {}), ...overrides };
   label.userData.style = style;
@@ -82,7 +82,7 @@ App.prototype.applyLabelStyle = function applyLabelStyle(label, overrides = {}) 
   }
 };
 
-App.prototype.setLabelHighlight = function setLabelHighlight(box, active) {
+WorkspaceScene.prototype.setLabelHighlight = function setLabelHighlight(box, active) {
   if (!box || !box.label) return;
   const targetStyle = active
     ? {
@@ -103,13 +103,13 @@ App.prototype.setLabelHighlight = function setLabelHighlight(box, active) {
   this.applyLabelStyle(box.label, targetStyle);
 };
 
-App.prototype.updateBoxLabelPosition = function updateBoxLabelPosition(box) {
+WorkspaceScene.prototype.updateBoxLabelPosition = function updateBoxLabelPosition(box) {
   if (!box.label) return;
   const y = box.position.y + box.size.h / 2 + 20;
   box.label.position.set(box.position.x, y, box.position.z);
 };
 
-App.prototype.updateBoxLabel = function updateBoxLabel(box) {
+WorkspaceScene.prototype.updateBoxLabel = function updateBoxLabel(box) {
   this.updateBoxLabelTexture(box);
   this.updateBoxLabelPosition(box);
 };

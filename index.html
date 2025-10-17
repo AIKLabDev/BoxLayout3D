@@ -22,6 +22,7 @@
       <nav class="top-menu">
         <span class="menu-label" id="connectedRobotName" role="status" aria-live="polite">CR20A</span>
         <button class="menu-item is-active" data-view-target="workspace" id="mainViewNavBtn">Main View</button>
+        <button class="menu-item" data-view-target="boxlayout" id="boxLayoutNavBtn">Box Layout</button>
         <button class="menu-item" data-view-target="setup" id="setupNavBtn">Setup</button>
         <button id="uiComponentButton" class="menu-item">UI Component</button>
         <button id="popupButton" class="menu-item">Popup Window</button>
@@ -45,27 +46,43 @@
       </div>
     </div>
     <main id="container" class="view-panel" data-view="workspace">
-      <div id="scene-wrap">
-        <div id="hud">
-          <h2>3D Box Layout</h2>
-          <p id="spaceInfo">Space size: -</p>
-          <p id="boxCount">Box count: 0</p>
+      <section id="primaryScene" class="primary-pane">
+        <div id="scene-wrap">
+          <div id="hud">
+            <h2>3D Box Layout</h2>
+            <p id="spaceInfo">Space size: -</p>
+            <p id="boxCount">Box count: 0</p>
+          </div>
+          <div id="three-root"></div>
+          <div id="view-buttons">
+            <button id="topViewBtn" class="view-btn">Top View</button>
+          </div>
         </div>
-        <div id="three-root"></div>
-        <div id="view-buttons">
-          <button id="topViewBtn" class="view-btn">Top View</button>
-        </div>
+      </section>
+      <div class="right-panes">
+        <section id="currentLayoutScene" class="scene-pane" aria-label="Current box layout">
+          <div class="pane-body">
+            <div id="aux-three-root" class="viewport-3d"></div>
+          </div>
+        </section>
+        <section id="cameraScene" class="scene-pane" aria-label="Camera view">
+          <div class="pane-body">
+            <canvas id="cameraViewCanvas" class="camera-canvas"></canvas>
+          </div>
+        </section>
       </div>
-      <aside id="controls">
-        <button id="addBoxBtn">Add Box</button>
-        <div class="button-row">
-          <button id="saveLayoutBtn" class="secondary-btn">Save Layout</button>
-          <button id="loadLayoutBtn" class="secondary-btn">Load Layout</button>
-        </div>
-        <input type="file" id="loadInput" accept="application/json" />
-        <div id="boxList"></div>
-      </aside>
     </main>
+
+    <section
+      id="boxlayout-panel"
+      class="view-panel view-hidden"
+      data-view="boxlayout"
+      data-template="templates/box-layout.html"
+    >
+      <div class="view-placeholder" role="status">
+        <span>Box layout view를 불러오는 중...</span>
+      </div>
+    </section>
 
     <section
       id="setup-panel"

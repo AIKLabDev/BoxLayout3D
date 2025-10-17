@@ -1,4 +1,5 @@
 import App from './App.js';
+import { initializeBoxLayoutPanel } from './boxLayoutPanel.js';
 import MessageBox from './ui/messageBox.js';
 import UIComponentDemo from './ui/UIComponentDemo.js';
 import './scene.js';
@@ -10,10 +11,9 @@ import './interactions.js';
 import './robot.js';
 import './setup.js';
 
-window.app = new App();
-
-window.setConnectedRobotName = (name) => window.app?.setConnectedRobotName(name);
-window.setSceneName = (name) => window.app?.setSceneName(name);
+const mainApp = new App();
+window.mainApp = mainApp;
+initializeBoxLayoutPanel(mainApp);
 
 async function bootstrapUI() {
   try {
