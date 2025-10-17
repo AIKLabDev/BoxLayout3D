@@ -14,6 +14,7 @@ function loadTemplate() {
         console.error(error);
         return `
           <div class="message-box-layer" data-message-box-layer aria-hidden="true">
+            <div class="message-box-backdrop" data-message-box-backdrop></div>
             <div class="message-box" role="alertdialog" aria-modal="true">
               <header class="message-box__header" data-message-box-handle>
                 <h2 class="message-box__title" data-message-box-title>Message</h2>
@@ -50,13 +51,23 @@ export default class MessageBox {
       parent: document.body,
       defaultTitle: '알림',
       primaryLabel: '확인',
-      rememberPosition: false
+      mode: 'floating',
+      rememberPosition: false,
+      closeOnBackdrop: undefined,
+      draggable: undefined
     };
     this.options = { ...defaults, ...options };
     this.parent = this.options.parent || document.body;
     this.defaultTitle = this.options.defaultTitle || defaults.defaultTitle;
     this.defaultPrimaryLabel = this.options.primaryLabel || defaults.primaryLabel;
-    this.rememberPosition = !!this.options.rememberPosition;
+    this.mode = this.options.mode === 'modal' ? 'modal' : 'floating';
+    this.draggable =
+      typeof this.options.draggable === 'boolean' ? this.options.draggable : this.mode === 'floating';
+    this.closeOnBackdrop =
+      typeof this.options.closeOnBackdrop === 'boolean'
+        ? this.options.closeOnBackdrop
+        : this.mode === 'modal';
+    this.rememberPosition = this.mode === 'floating' && !!this.options.rememberPosition;
 
     this.root = null;
     this.dialog = null;
@@ -65,6 +76,7 @@ export default class MessageBox {
     this.primaryBtn = null;
     this.closeBtn = null;
     this.header = null;
+    this.backdrop = null;
     this.position = null;
     this.dragState = {
       active: false,
@@ -83,6 +95,7 @@ export default class MessageBox {
     this._handleKeyDown = this._handleKeyDown.bind(this);
     this._handleCloseClick = this.hide.bind(this);
     this._handlePrimaryClick = this.hide.bind(this);
+    this._handleBackdropClick = this._handleBackdropClick.bind(this);
 
     this.ready = this._initialize();
   }
@@ -109,6 +122,7 @@ export default class MessageBox {
     this.primaryBtn = this.root.querySelector('[data-message-box-primary]');
     this.closeBtn = this.root.querySelector('[data-message-box-close]');
     this.header = this.root.querySelector('[data-message-box-handle]') || this.dialog;
+    this.backdrop = this.root.querySelector('[data-message-box-backdrop]');
 
     const titleId = createId('message-box-title');
     const bodyId = createId('message-box-body');
@@ -122,6 +136,13 @@ export default class MessageBox {
     if (this.dialog) {
       this.dialog.setAttribute('aria-labelledby', titleId);
       this.dialog.setAttribute('aria-describedby', bodyId);
+      this.dialog.setAttribute('role', this.mode === 'modal' ? 'alertdialog' : 'dialog');
+      this.dialog.setAttribute('aria-modal', this.mode === 'modal' ? 'true' : 'false');
+    }
+
+    this.root.classList.add(this.mode === 'modal' ? 'is-modal' : 'is-floating');
+    if (this.draggable) {
+      this.root.classList.add('is-draggable');
     }
 
     this._bindEvents();
@@ -141,14 +162,17 @@ export default class MessageBox {
       this.primaryBtn.textContent = this.defaultPrimaryLabel;
       this.primaryBtn.addEventListener('click', this._handlePrimaryClick);
     }
-    if (this.header) {
+    if (this.header && this.draggable) {
       this.header.addEventListener('pointerdown', this._handlePointerDown);
+    }
+    if (this.backdrop && this.closeOnBackdrop) {
+      this.backdrop.addEventListener('click', this._handleBackdropClick);
     }
     window.addEventListener('resize', this._handleResize);
   }
 
   _handlePointerDown(event) {
-    if (!this.root || !this._isVisible) return;
+    if (!this.draggable || !this.root || !this._isVisible) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     const rect = this.root.getBoundingClientRect();
@@ -170,7 +194,7 @@ export default class MessageBox {
   }
 
   _handlePointerMove(event) {
-    if (!this.dragState.active || event.pointerId !== this.dragState.pointerId) return;
+    if (!this.draggable || !this.dragState.active || event.pointerId !== this.dragState.pointerId) return;
     event.preventDefault();
     const left = event.clientX - this.dragState.offsetX;
     const top = event.clientY - this.dragState.offsetY;
@@ -178,7 +202,7 @@ export default class MessageBox {
   }
 
   _handlePointerUp(event) {
-    if (!this.dragState.active || event.pointerId !== this.dragState.pointerId) return;
+    if (!this.draggable || !this.dragState.active || event.pointerId !== this.dragState.pointerId) return;
     this.dragState.active = false;
     this.dragState.pointerId = null;
     this.root.classList.remove('is-dragging');
@@ -195,7 +219,7 @@ export default class MessageBox {
   }
 
   _handleResize() {
-    if (!this.root) return;
+    if (!this.root || this.mode !== 'floating') return;
     if (!this.position) {
       this._center();
       return;
@@ -204,7 +228,7 @@ export default class MessageBox {
   }
 
   _applyPosition(left, top) {
-    if (!this.root) return;
+    if (!this.root || this.mode !== 'floating') return;
     const width = this.root.offsetWidth;
     const height = this.root.offsetHeight;
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || width;
@@ -222,7 +246,7 @@ export default class MessageBox {
   }
 
   _center() {
-    if (!this.root) return;
+    if (!this.root || this.mode !== 'floating') return;
     const width = this.root.offsetWidth;
     const height = this.root.offsetHeight;
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || width;
@@ -234,6 +258,12 @@ export default class MessageBox {
 
   _prepareForShow() {
     if (!this.root) return;
+    if (this.mode !== 'floating') {
+      this.root.style.top = '';
+      this.root.style.left = '';
+      this.root.style.transform = '';
+      return;
+    }
     if (this._isVisible && this.position) {
       this._applyPosition(this.position.left, this.position.top);
       return;
@@ -242,6 +272,13 @@ export default class MessageBox {
       this._applyPosition(this.position.left, this.position.top);
     } else {
       this._center();
+    }
+  }
+
+  _handleBackdropClick(event) {
+    if (this.mode !== 'modal') return;
+    if (!event || event.target === this.backdrop) {
+      this.hide();
     }
   }
 
@@ -293,25 +330,29 @@ export default class MessageBox {
   async hide() {
     await this.ready;
     if (!this._isVisible) {
-      this.root.classList.remove('is-visible');
-      this.root.setAttribute('aria-hidden', 'true');
+      if (this.root) {
+        this.root.classList.remove('is-visible');
+        this.root.setAttribute('aria-hidden', 'true');
+      }
       return;
     }
     this._isVisible = false;
-    this.root.classList.remove('is-visible');
-    this.root.setAttribute('aria-hidden', 'true');
+    if (this.root) {
+      this.root.classList.remove('is-visible');
+      this.root.setAttribute('aria-hidden', 'true');
+      this.root.classList.remove('is-dragging');
+      this.root.style.transition = '';
+      if (this.mode !== 'floating' || !this.rememberPosition) {
+        this.position = null;
+        this.root.style.top = '';
+        this.root.style.left = '';
+        this.root.style.transform = '';
+      }
+    }
     document.removeEventListener('keydown', this._handleKeyDown);
     this.dragState.active = false;
     this.dragState.pointerId = null;
-    this.root.classList.remove('is-dragging');
-    this.root.style.transition = '';
     this._removeDragListeners();
-    if (!this.rememberPosition) {
-      this.position = null;
-      this.root.style.top = '';
-      this.root.style.left = '';
-      this.root.style.transform = '';
-    }
     if (this._autoCloseTimer) {
       clearTimeout(this._autoCloseTimer);
       this._autoCloseTimer = null;
@@ -326,8 +367,11 @@ export default class MessageBox {
     if (this.primaryBtn) {
       this.primaryBtn.removeEventListener('click', this._handlePrimaryClick);
     }
-    if (this.header) {
+    if (this.header && this.draggable) {
       this.header.removeEventListener('pointerdown', this._handlePointerDown);
+    }
+    if (this.backdrop && this.closeOnBackdrop) {
+      this.backdrop.removeEventListener('click', this._handleBackdropClick);
     }
     window.removeEventListener('resize', this._handleResize);
     this._removeDragListeners();
@@ -338,6 +382,7 @@ export default class MessageBox {
     this.root = null;
     this.dialog = null;
     this.header = null;
+    this.backdrop = null;
     this.dragState.active = false;
   }
 }

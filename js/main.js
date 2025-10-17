@@ -12,19 +12,36 @@ window.app = new App();
 
 async function bootstrapUI() {
   try {
-    const messageBox = await MessageBox.create({
-      defaultTitle: '알림',
-      primaryLabel: '확인',
-      rememberPosition: true
-    });
-    const logButton = document.getElementById('logButton');
-    if (logButton) {
-      logButton.addEventListener('click', () => {
-        messageBox.show('hello', { title: 'Log' });
+    const [floatingBox, modalBox] = await Promise.all([
+      MessageBox.create({
+        defaultTitle: '알림',
+        primaryLabel: '확인',
+        mode: 'floating',
+        rememberPosition: true
+      }),
+      MessageBox.create({
+        defaultTitle: '알림',
+        primaryLabel: '확인',
+        mode: 'modal',
+        closeOnBackdrop: true
+      })
+    ]);
+
+    const popupButton = document.getElementById('popupButton');
+    if (popupButton) {
+      popupButton.addEventListener('click', () => {
+        floatingBox.show('hello', { title: 'Popup Window' });
+      });
+    }
+
+    const messageButton = document.getElementById('messageBoxButton');
+    if (messageButton) {
+      messageButton.addEventListener('click', () => {
+        modalBox.show('hello', { title: 'Message Box' });
       });
     }
   } catch (error) {
-    console.error('Failed to initialize message box', error);
+    console.error('Failed to initialize message boxes', error);
   }
 }
 
