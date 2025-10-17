@@ -3,14 +3,14 @@ import App from './App.js';
 App.prototype.drawSpace = function drawSpace() {
   const { width, height, depth } = this.spaceSize;
 
-  // Space edge wire frame
+  // Wireframe bounds
   const boxGeo = new THREE.BoxGeometry(width, height, depth);
   const edges = new THREE.EdgesGeometry(boxGeo);
   const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
   wire.position.set(0, height / 2, 0);
   this.scene.add(wire);
 
-  // floor
+  // Floor mesh
   const floorGeo = new THREE.PlaneGeometry(width, depth);
   const floorMat = new THREE.MeshLambertMaterial({ color: 0xcccccc, transparent: true, opacity: 0.35 });
   const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -19,16 +19,18 @@ App.prototype.drawSpace = function drawSpace() {
   floor.receiveShadow = true;
   this.scene.add(floor);
 
-  // floor edge
-  const p = [
+  // Floor outline
+  const points = [
     new THREE.Vector3(-width / 2, 0.1, -depth / 2),
     new THREE.Vector3(width / 2, 0.1, -depth / 2),
     new THREE.Vector3(width / 2, 0.1, depth / 2),
     new THREE.Vector3(-width / 2, 0.1, depth / 2)
   ];
   const loop = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(p),
+    new THREE.BufferGeometry().setFromPoints(points),
     new THREE.LineBasicMaterial({ color: 0xff0000 })
   );
   this.scene.add(loop);
+
+  if (this.gridOverlay) this.gridOverlay.sync();
 };

@@ -1,3 +1,5 @@
+import WorkspaceGrid from './grid.js';
+
 export default class App {
   constructor() {
     // Work space (mm)
@@ -54,6 +56,12 @@ export default class App {
     this.pointer = new THREE.Vector2();
     this.orbitZoomSnapshot = this.camera.zoom;
     this.updateCameraFromState();
+
+    this.gridOverlay = new WorkspaceGrid({
+      scene: this.scene,
+      getSpaceSize: () => this.spaceSize,
+      getCameraState: () => this.cameraState
+    });
 
     this.renderer = new THREE.WebGLRenderer({ antialias:true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
